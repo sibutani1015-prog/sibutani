@@ -1,0 +1,19 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('api', {
+  isElectron: true,
+
+  // Click-through: the renderer calls this on every mousemove, passing
+  // true when the cursor is over empty (transparent) space so clicks fall
+  // through to the real desktop, false when it is over a panel/dock so the
+  // widget itself receives the click.
+  setIgnoreMouseEvents: (ignore) => ipcRenderer.send('set-ignore-mouse-events', ignore),
+
+  store: {
+    get: (key) => ipcRenderer.sendSync('store-get', key),
+    set: (key, value) => ipcRenderer.send('store-set', key, value),
+    remove: (key) => ipcRenderer.send('store-remove', key)
+  },
+
+  exportBackup: (dataStr) => ipcRenderer.invoke('export-backup', dataStr)
+});
