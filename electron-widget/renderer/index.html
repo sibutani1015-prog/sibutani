@@ -61,7 +61,7 @@
   button{ cursor:pointer; }
 
   .page{
-    max-width:none; margin:0 auto; padding: 12px 14px 92px;
+    width:80%; max-width:none; margin:0; padding: 12px 14px 92px;
     height:100vh; overflow:hidden;
     display:flex; flex-direction:column;
   }
@@ -71,28 +71,31 @@
   .head{
     display:flex; justify-content:space-between; align-items:flex-end; gap:20px;
     padding:12px 16px; margin-bottom:10px; flex-wrap:wrap; flex:none;
-    background:var(--cell); border:1px solid var(--grid); border-radius:10px;
-    box-shadow:var(--shadow);
+    background-color:var(--cell); border-bottom:2px solid var(--grid-strong);
     -webkit-app-region: drag;
   }
   .clock{ font-size:clamp(26px,3.6vw,36px); font-weight:600; letter-spacing:0.01em; line-height:1; }
   .clock small{ font-size:0.42em; color:var(--ink-soft); margin-left:4px; font-weight:500;}
   .date-line{ margin-top:6px; font-size:13px; color:var(--ink-soft); }
   .date-line b{ color:var(--ink); font-weight:600; }
-  .greet{ text-align:right; max-width:280px; }
-  .greet .title{ font-size:16px; margin-bottom:3px; }
-  .greet .sub{ font-size:11px; color:var(--ink-soft); }
+  .greet{ text-align:right; max-width:440px; -webkit-app-region: no-drag; }
+  .greet .title{ font-size:15px; margin-bottom:4px; }
+  .greet .sub{ font-size:12px; color:var(--ink-soft); line-height:1.5; font-style:italic; }
+  .greet .sub b{ font-style:normal; color:var(--ink); font-weight:600; }
 
-  /* ---------- widget grid: 3 columns(2:1:1) x 3 rows(2:1:1), ai도우미 alone on the bottom row ---------- */
+  /* ---------- widget grid ----------
+     4 cols x 4 rows. Band A (rows 1-3, weight 3): 달력 | D-Day / 일정 / 메모 stacked (1:2:1)
+     Band B (row 4, weight 1): AI도우미(2) | 자료함(1) | 메시지 발송(1) */
   .board{
     flex:1; min-height:0;
     display:grid; gap:10px;
-    grid-template-columns: 2fr 1fr 1fr;
-    grid-template-rows: 2fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-rows: 0.75fr 1.5fr 0.75fr 1fr;
     grid-template-areas:
-      "cal      sched    memo"
-      "material contact  dday"
-      "ai       .        .";
+      "cal cal dday    dday"
+      "cal cal sched   sched"
+      "cal cal memo    memo"
+      "ai  ai  material contact";
     position:relative;
   }
   .ga-cal{ grid-area:cal; }
@@ -105,12 +108,13 @@
   @media (max-width:980px){
     .board{
       grid-template-columns: 1fr 1fr;
-      grid-template-rows: repeat(4, auto);
+      grid-template-rows: repeat(6, auto);
       grid-template-areas:
         "cal      cal"
-        "sched    memo"
+        "dday     sched"
+        "memo     memo"
         "material contact"
-        "dday     ai";
+        "ai       ai";
       overflow-y:auto; scrollbar-width:none;
     }
     .board::-webkit-scrollbar{ display:none; }
@@ -188,21 +192,21 @@
   .cal-nav button{ border:1px solid var(--grid); background:var(--cell-alt); border-radius:6px; color:var(--ink-soft); width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:12px; }
   .cal-nav button:hover{ border-color:var(--accent); color:var(--accent); }
   .cal-nav .today-btn{ width:auto; padding:0 9px; font-size:11px; font-weight:600; }
-  .cal-month{ font-family:var(--mono); font-weight:600; font-size:12px; min-width:60px; text-align:center; }
-  table.cal{ width:100%; border-collapse:separate; border-spacing:2px 4px; table-layout:fixed; }
-  table.cal th{ font-size:11px; font-weight:600; color:var(--ink-soft); padding:2px 0 6px; }
+  .cal-month{ font-family:var(--mono); font-weight:600; font-size:14px; min-width:66px; text-align:center; }
+  table.cal{ width:100%; height:100%; border-collapse:separate; border-spacing:3px 5px; table-layout:fixed; }
+  table.cal th{ font-size:13px; font-weight:600; color:var(--ink-soft); padding:2px 0 8px; }
   table.cal th.sun{ color:var(--sun); }
   table.cal th.sat{ color:var(--sat); }
   table.cal td{
-    height:32px; vertical-align:top; padding:2px 3px; border-radius:7px;
-    font-family:var(--mono); font-size:12px; color:var(--ink-faint); cursor:pointer;
+    height:38px; vertical-align:top; padding:3px 4px; border-radius:7px;
+    font-family:var(--mono); font-size:16px; font-weight:500; color:var(--ink-faint); cursor:pointer;
   }
   table.cal td:hover{ background:var(--accent-soft); }
   table.cal td.cur{ color:var(--ink); }
   table.cal td.sun.cur{ color:var(--sun); }
   table.cal td.sat.cur{ color:var(--sat); }
   table.cal td.sel{ background:var(--accent-soft); box-shadow:inset 0 0 0 1.5px var(--accent); }
-  table.cal td .d{ display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; }
+  table.cal td .d{ display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; }
   table.cal td.today .d{ background:var(--accent); color:var(--accent-ink); font-weight:700; border-radius:6px; }
   table.cal td .dots{ display:flex; gap:2px; margin-top:3px; padding-left:1px; }
   table.cal td .dots i{ width:5px; height:5px; border-radius:50%; display:block; }
@@ -253,8 +257,8 @@
 
   .dock-pins{ display:flex; gap:2px; }
   .dock button.pin .letter{
-    width:22px; height:22px; border-radius:50%; background:var(--accent); color:var(--accent-ink);
-    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;
+    width:18px; height:18px; border-radius:50%; background:var(--accent); color:var(--accent-ink);
+    display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;
     font-family:var(--mono);
   }
 
@@ -330,16 +334,16 @@
   .qc-actions .save{ background:var(--accent); color:var(--accent-ink); }
   .qc-actions .cancel{ background:var(--cell-alt); color:var(--ink-soft); }
 
-  /* ---------- dock ---------- */
-  .dock-wrap{ position:fixed; left:0; right:0; bottom:16px; display:flex; justify-content:center; pointer-events:none; z-index:10; }
-  .dock{ pointer-events:auto; display:flex; gap:2px; padding:7px; background:color-mix(in srgb, var(--cell) 88%, transparent); backdrop-filter:blur(10px); border:1px solid var(--grid); border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.14); max-width:94vw; overflow-x:auto; }
-  .dock button{ position:relative; flex:none; width:42px; height:42px; display:flex; align-items:center; justify-content:center; background:none; border:none; border-radius:11px; color:var(--ink-soft); }
-  .dock button svg{ width:18px; height:18px; stroke:currentColor; }
+  /* ---------- dock (about 80% of its old size) ---------- */
+  .dock-wrap{ position:fixed; left:0; right:0; bottom:12px; display:flex; justify-content:center; pointer-events:none; z-index:10; }
+  .dock{ pointer-events:auto; display:flex; gap:2px; padding:5px; background:color-mix(in srgb, var(--cell) 88%, transparent); backdrop-filter:blur(10px); border:1px solid var(--grid); border-radius:13px; box-shadow:0 8px 24px rgba(0,0,0,0.14); max-width:94vw; overflow-x:auto; }
+  .dock button{ position:relative; flex:none; width:34px; height:34px; display:flex; align-items:center; justify-content:center; background:none; border:none; border-radius:9px; color:var(--ink-soft); }
+  .dock button svg{ width:15px; height:15px; stroke:currentColor; }
   .dock button:hover, .dock button:focus-visible{ color:var(--accent); background:var(--accent-soft); outline:none; }
   .dock button#editBtn.active{ color:var(--accent-ink); background:var(--accent); }
-  .dock button .tip{ position:absolute; bottom:52px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--paper); border-radius:6px; font-size:11px; padding:3px 7px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .12s; }
+  .dock button .tip{ position:absolute; bottom:42px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--paper); border-radius:6px; font-size:11px; padding:3px 7px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .12s; }
   .dock button:hover .tip, .dock button:focus-visible .tip{ opacity:1; }
-  .dock .sep{ width:1px; background:var(--grid); margin:6px 3px; flex:none; }
+  .dock .sep{ width:1px; background:var(--grid); margin:5px 2px; flex:none; }
 
   .storage-note{ text-align:center; font-size:11px; color:var(--ink-faint); margin-top:10px; }
 
@@ -400,6 +404,21 @@
           <thead><tr><th class="sun">일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th class="sat">토</th></tr></thead>
           <tbody id="calBody"></tbody>
         </table>
+      </div>
+    </section>
+
+    <section class="panel ga-dday" id="panel-dday">
+      <div class="panel-head">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4"/><path d="M4 4h14l-3 4 3 4H4"/></svg>D-Day</h2>
+        <span class="count" id="ddayCount">0개</span>
+      </div>
+      <div class="panel-body">
+        <div class="dday-add">
+          <input type="text" id="ddayName" placeholder="이름" maxlength="30">
+          <input type="date" id="ddayDate">
+          <button id="ddayAdd" style="border:1px solid var(--grid-strong);background:var(--accent-soft);color:var(--accent);border-radius:8px;font-weight:600;padding:0 14px;">추가</button>
+        </div>
+        <ul class="dday-list" id="ddayList"></ul>
       </div>
     </section>
 
@@ -511,20 +530,6 @@
     </section>
 
 
-    <section class="panel ga-dday" id="panel-dday">
-      <div class="panel-head">
-        <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4"/><path d="M4 4h14l-3 4 3 4H4"/></svg>D-Day</h2>
-        <span class="count" id="ddayCount">0개</span>
-      </div>
-      <div class="panel-body">
-        <div class="dday-add">
-          <input type="text" id="ddayName" placeholder="이름" maxlength="30">
-          <input type="date" id="ddayDate">
-          <button id="ddayAdd" style="border:1px solid var(--grid-strong);background:var(--accent-soft);color:var(--accent);border-radius:8px;font-weight:600;padding:0 14px;">추가</button>
-        </div>
-        <ul class="dday-list" id="ddayList"></ul>
-      </div>
-    </section>
 
   </div>
 
@@ -638,16 +643,34 @@
     document.getElementById('dateLine').innerHTML =
       now.getFullYear() + '년 ' + (now.getMonth()+1) + '월 ' + now.getDate() + '일 <b>' + WD[now.getDay()] + '요일</b>';
     var greetTitle = document.getElementById('greetTitle');
-    var greetSub = document.getElementById('greetSub');
-    if(h < 6){ greetTitle.textContent='아직 밤이 깊어요'; greetSub.textContent='늦은 시간까지 고생 많아요.'; }
-    else if(h < 11){ greetTitle.textContent='좋은 아침이에요'; greetSub.textContent='오늘 일정을 가볍게 확인해보세요.'; }
-    else if(h < 14){ greetTitle.textContent='점심은 챙기셨나요'; greetSub.textContent='잠깐 쉬었다 다시 시작해요.'; }
-    else if(h < 19){ greetTitle.textContent='오늘도 힘내세요'; greetSub.textContent='할 일이 하나씩 줄어들고 있어요.'; }
-    else { greetTitle.textContent='오늘 하루도 고생했어요'; greetSub.textContent='내일 일정은 미리 남겨두세요.'; }
+    if(h < 6){ greetTitle.textContent='아직 밤이 깊어요'; }
+    else if(h < 11){ greetTitle.textContent='좋은 아침이에요'; }
+    else if(h < 14){ greetTitle.textContent='점심은 챙기셨나요'; }
+    else if(h < 19){ greetTitle.textContent='오늘도 힘내세요'; }
+    else { greetTitle.textContent='오늘 하루도 고생했어요'; }
   }
   tickClock();
   setInterval(paintClock, 1000);
   setInterval(tickClock, 60000);
+
+  /* ---------- a quote of the day (Nietzsche / Goethe), stable per calendar day ---------- */
+  (function(){
+    var QUOTES = [
+      { text:'그대의 운명을 사랑하라.', author:'니체' },
+      { text:'나를 죽이지 못하는 것은 나를 더 강하게 만든다.', author:'니체' },
+      { text:'춤추는 별 하나를 낳으려면, 사람은 자기 안에 혼돈을 지니고 있어야 한다.', author:'니체' },
+      { text:'심연을 오래 들여다보면, 심연도 너를 들여다본다.', author:'니체' },
+      { text:'벗이여, 고독 속으로 달아나라.', author:'니체' },
+      { text:'인간은 노력하는 한 방황한다.', author:'괴테' },
+      { text:'아는 것만으로는 충분하지 않다, 적용해야 한다. 의지만으로는 충분하지 않다, 행동해야 한다.', author:'괴테' },
+      { text:'매일 적어도 노래 한 곡을 듣고, 좋은 시 한 편을 읽고, 좋은 그림 한 점을 보아야 한다.', author:'괴테' }
+    ];
+    var start = new Date(new Date().getFullYear(), 0, 0);
+    var dayOfYear = Math.floor((new Date() - start) / 86400000);
+    var q = QUOTES[dayOfYear % QUOTES.length];
+    var greetSub = document.getElementById('greetSub');
+    greetSub.innerHTML = '"' + q.text + '" <b>— ' + q.author + '</b>';
+  })();
 
   /* ---------- storage (local JSON file via the main process, not localStorage) ---------- */
   function load(key, fallback){
