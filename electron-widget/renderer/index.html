@@ -61,34 +61,38 @@
   button{ cursor:pointer; }
 
   .page{
-    max-width:1600px; margin:0 auto; padding: 14px 16px 96px;
+    max-width:none; margin:0 auto; padding: 12px 14px 92px;
     height:100vh; overflow:hidden;
     display:flex; flex-direction:column;
   }
 
-  /* ---------- header ---------- */
+  /* ---------- header: a real card so it stays legible over any wallpaper,
+     and doubles as the window's drag handle (frameless window) ---------- */
   .head{
     display:flex; justify-content:space-between; align-items:flex-end; gap:20px;
-    padding-bottom:10px; margin-bottom:12px; border-bottom:2px solid var(--grid-strong); flex-wrap:wrap;
-    flex:none;
+    padding:12px 16px; margin-bottom:10px; flex-wrap:wrap; flex:none;
+    background:var(--cell); border:1px solid var(--grid); border-radius:10px;
+    box-shadow:var(--shadow);
+    -webkit-app-region: drag;
   }
-  .clock{ font-size:clamp(28px,4vw,40px); font-weight:600; letter-spacing:0.01em; line-height:1; }
+  .clock{ font-size:clamp(26px,3.6vw,36px); font-weight:600; letter-spacing:0.01em; line-height:1; }
   .clock small{ font-size:0.42em; color:var(--ink-soft); margin-left:4px; font-weight:500;}
-  .date-line{ margin-top:6px; font-size:14px; color:var(--ink-soft); }
+  .date-line{ margin-top:6px; font-size:13px; color:var(--ink-soft); }
   .date-line b{ color:var(--ink); font-weight:600; }
   .greet{ text-align:right; max-width:280px; }
-  .greet .title{ font-size:18px; margin-bottom:3px; }
-  .greet .sub{ font-size:12px; color:var(--ink-soft); }
+  .greet .title{ font-size:16px; margin-bottom:3px; }
+  .greet .sub{ font-size:11px; color:var(--ink-soft); }
 
-  /* ---------- widget grid: row1 달력(2):일정(1):메모(1), row2 네 칸 균등 ---------- */
+  /* ---------- widget grid: 3 columns(2:1:1) x 3 rows(2:1:1), ai도우미 alone on the bottom row ---------- */
   .board{
     flex:1; min-height:0;
     display:grid; gap:10px;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: 1.25fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-rows: 2fr 1fr 1fr;
     grid-template-areas:
-      "cal      cal      sched    memo"
-      "ai       material contact  dday";
+      "cal      sched    memo"
+      "material contact  dday"
+      "ai       .        .";
     position:relative;
   }
   .ga-cal{ grid-area:cal; }
@@ -105,8 +109,8 @@
       grid-template-areas:
         "cal      cal"
         "sched    memo"
-        "ai       material"
-        "contact  dday";
+        "material contact"
+        "dday     ai";
       overflow-y:auto; scrollbar-width:none;
     }
     .board::-webkit-scrollbar{ display:none; }
@@ -615,7 +619,7 @@
     if(!window.api) return;
     document.addEventListener('mousemove', function(e){
       var el = document.elementFromPoint(e.clientX, e.clientY);
-      var interactive = el && el.closest('.panel, .dock, .modal-back.open');
+      var interactive = el && el.closest('.panel, .dock, .modal-back.open, .head');
       window.api.setIgnoreMouseEvents(!interactive);
     });
   })();

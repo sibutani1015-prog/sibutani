@@ -30,12 +30,17 @@ function currentDisplay() {
 }
 
 function createWindow() {
+  // A window the user has dragged/resized before (across either monitor)
+  // is remembered exactly; otherwise fall back to filling the chosen display.
+  const saved = storeCache.__windowBounds;
   const disp = currentDisplay();
+  const bounds = saved || {
+    x: disp.bounds.x, y: disp.bounds.y,
+    width: disp.bounds.width, height: disp.bounds.height
+  };
+
   mainWindow = new BrowserWindow({
-    x: disp.bounds.x,
-    y: disp.bounds.y,
-    width: disp.bounds.width,
-    height: disp.bounds.height,
+    x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
     frame: false,
     transparent: true,
     resizable: true,
@@ -55,8 +60,23 @@ function createWindow() {
 
   // Start in click-through mode: mouse events pass to whatever is under
   // the window (real desktop icons). The renderer re-enables/disables this
-  // per mouse position over an actual panel/dock element (see preload.js).
+  // per mouse position over an actual panel/dock element (see preload.js),
+  // including the header bar, which is also the window's drag handle
+  // (-webkit-app-region: drag) so the whole widget can be dragged to
+  // either monitor on a dual-monitor setup.
   mainWindow.setIgnoreMouseEvents(true, { forward: true });
+
+  var saveBoundsTimer = null;
+  function saveBounds(){
+    clearTimeout(saveBoundsTimer);
+    saveBoundsTimer = setTimeout(() => {
+      if (!mainWindow) return;
+      storeCache.__windowBounds = mainWindow.getBounds();
+      writeStore(storeCache);
+    }, 400);
+  }
+  mainWindow.on('moved', saveBounds);
+  mainWindow.on('resized', saveBounds);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
