@@ -5,68 +5,74 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>그리드 데스크</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
-
   :root{
-    --ink:#1F2A24;
-    --ink-soft:#5B685E;
-    --ink-faint:#93A092;
-    --paper:#EEF1EA;
-    --cell:#FBFCF8;
-    --cell-alt:#F4F6F0;
-    --grid:#CBD3C6;
-    --grid-strong:#A9B4A2;
-    --accent:#2B5C4D;
-    --accent-ink:#F4F8F4;
-    --accent-soft:#DCE7DE;
-    --sun:#A6472F;
-    --sat:#2E5A8A;
-    --warn:#B5502E;
-    --gold:#9C7A2E;
-    --shadow: 0 2px 10px rgba(31,42,36,0.08);
+    --ui: 'Malgun Gothic', '맑은 고딕', 'Segoe UI', system-ui, sans-serif;
+    --mono: 'Consolas', 'Cascadia Mono', 'Segoe UI', var(--ui);
+
+    --ink:#33403A;
+    --ink-soft:#66766D;
+    --ink-faint:#98A69E;
+    --paper:#F1F3F1;
+    --cell:#FAFBFA;
+    --cell-alt:#F1F3F1;
+    --grid:#E3E7E3;
+    --grid-strong:#C9D1C8;
+    --accent:#5E8577;
+    --accent-ink:#F7FAF8;
+    --accent-soft:#E5EDE9;
+    --sun:#B06A56;
+    --sat:#5C7A96;
+    --warn:#B06A56;
+    --gold:#A8895A;
+    --shadow: 0 1px 6px rgba(40,50,45,0.06);
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
-      --ink:#E7ECE5; --ink-soft:#AAB6A5; --ink-faint:#6C7A6A;
-      --paper:#131C16; --cell:#1A251C; --cell-alt:#1F2B21;
-      --grid:#33422F; --grid-strong:#465A40;
-      --accent:#7BC79E; --accent-ink:#0F1C13; --accent-soft:#243A2A;
-      --sun:#E08A6E; --sat:#8CB4E0; --warn:#E08A5E; --gold:#D8BE73;
-      --shadow: 0 2px 12px rgba(0,0,0,0.35);
+      --ink:#DCE3DE; --ink-soft:#9AA69F; --ink-faint:#6B7871;
+      --paper:#1B211E; --cell:#232925; --cell-alt:#282F2A;
+      --grid:#343B36; --grid-strong:#454D47;
+      --accent:#7FA595; --accent-ink:#15201B; --accent-soft:#2C3A34;
+      --sun:#C98671; --sat:#7B98B2; --warn:#C98671; --gold:#BFA179;
+      --shadow: 0 1px 8px rgba(0,0,0,0.3);
     }
   }
   :root[data-theme="dark"]{
-    --ink:#E7ECE5; --ink-soft:#AAB6A5; --ink-faint:#6C7A6A;
-    --paper:#131C16; --cell:#1A251C; --cell-alt:#1F2B21;
-    --grid:#33422F; --grid-strong:#465A40;
-    --accent:#7BC79E; --accent-ink:#0F1C13; --accent-soft:#243A2A;
-    --sun:#E08A6E; --sat:#8CB4E0; --warn:#E08A5E; --gold:#D8BE73;
-    --shadow: 0 2px 12px rgba(0,0,0,0.35);
+    --ink:#DCE3DE; --ink-soft:#9AA69F; --ink-faint:#6B7871;
+    --paper:#1B211E; --cell:#232925; --cell-alt:#282F2A;
+    --grid:#343B36; --grid-strong:#454D47;
+    --accent:#7FA595; --accent-ink:#15201B; --accent-soft:#2C3A34;
+    --sun:#C98671; --sat:#7B98B2; --warn:#C98671; --gold:#BFA179;
+    --shadow: 0 1px 8px rgba(0,0,0,0.3);
   }
 
   *{ box-sizing:border-box; }
   html, body{ background:transparent; }
   body{
     margin:0; color:var(--ink);
-    font-family:'Noto Sans KR', -apple-system, sans-serif;
+    font-family:var(--ui);
     -webkit-font-smoothing:antialiased;
     scroll-behavior:smooth;
     overflow:hidden;
   }
-  .num{ font-family:'IBM Plex Mono','Noto Sans KR',monospace; font-variant-numeric:tabular-nums; }
-  .serif{ font-family:'Gowun Batang', serif; }
+  .num{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .serif{ font-family:var(--ui); }
   a,button,input,textarea,select{ font-family:inherit; color:inherit; }
   button{ cursor:pointer; }
 
-  .page{ max-width:1180px; margin:0 auto; padding: 28px 20px 148px; height:100vh; overflow-y:auto; }
+  .page{
+    max-width:1180px; margin:0 auto; padding: 18px 18px 118px;
+    height:100vh; overflow-y:auto;
+    scrollbar-width:none;
+  }
+  .page::-webkit-scrollbar{ display:none; }
 
   /* ---------- header ---------- */
   .head{
     display:flex; justify-content:space-between; align-items:flex-end; gap:20px;
-    padding-bottom:18px; margin-bottom:22px; border-bottom:2px solid var(--grid-strong); flex-wrap:wrap;
+    padding-bottom:12px; margin-bottom:14px; border-bottom:2px solid var(--grid-strong); flex-wrap:wrap;
   }
-  .clock{ font-size:clamp(40px,7vw,60px); font-weight:600; letter-spacing:0.01em; line-height:1; }
+  .clock{ font-size:clamp(30px,5vw,44px); font-weight:600; letter-spacing:0.01em; line-height:1; }
   .clock small{ font-size:0.42em; color:var(--ink-soft); margin-left:4px; font-weight:500;}
   .date-line{ margin-top:8px; font-size:15px; color:var(--ink-soft); }
   .date-line b{ color:var(--ink); font-weight:600; }
@@ -76,12 +82,13 @@
 
   /* ---------- widget grid ---------- */
   .board{
-    display:grid; gap:16px;
+    display:grid; gap:12px;
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-areas:
-      "cal      cal    material"
-      "sched    memo   contact"
+      "cal      cal    sched"
+      "material memo   contact"
       "ai       ai     dday";
+    position:relative;
   }
   .ga-cal{ grid-area:cal; }
   .ga-sched{ grid-area:sched; }
@@ -106,8 +113,15 @@
     .board > *{ grid-area:auto !important; }
   }
 
+  /* a panel the user has dragged/resized in edit mode leaves the grid flow */
+  .panel.placed{ position:absolute; z-index:3; margin:0; }
+  .board.editing .panel{ outline:1.5px dashed var(--grid-strong); outline-offset:2px; }
+  .board.editing .panel-head{ cursor:move; }
+  .board.editing .panel.dragging{ z-index:6; box-shadow:0 10px 24px rgba(0,0,0,0.18); }
+
   .panel{
-    background:var(--cell); border:1px solid var(--grid); border-radius:14px;
+    position:relative;
+    background:var(--cell); border:1px solid var(--grid); border-radius:10px;
     box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column;
     scroll-margin-top:20px;
   }
@@ -115,21 +129,29 @@
 
   .panel-head{
     display:flex; align-items:center; justify-content:space-between;
-    padding:12px 16px; background:var(--cell-alt); gap:10px;
+    padding:9px 12px; background:var(--cell-alt); gap:10px;
   }
   .panel-head h2{
-    margin:0; font-family:'Gowun Batang',serif; font-size:16px; font-weight:700;
-    display:flex; align-items:center; gap:8px; white-space:nowrap;
+    margin:0; font-family:var(--ui); font-size:14px; font-weight:700;
+    display:flex; align-items:center; gap:7px; white-space:nowrap;
   }
-  .panel-head h2 svg{ width:16px; height:16px; stroke:var(--accent); flex:none; }
-  .panel-head .count{ font-size:12px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; white-space:nowrap; }
-  .panel-body{ padding:14px 16px 16px; flex:1; }
+  .panel-head h2 svg{ width:15px; height:15px; stroke:var(--accent); flex:none; }
+  .panel-head .count{ font-size:11px; color:var(--ink-soft); font-family:var(--mono); white-space:nowrap; }
+  .panel-body{ padding:10px 12px 12px; flex:1; overflow:auto; scrollbar-width:none; }
+  .panel-body::-webkit-scrollbar{ display:none; }
+
+  .resize-handle{
+    position:absolute; right:2px; bottom:2px; width:14px; height:14px;
+    cursor:nwse-resize; display:none; color:var(--ink-faint);
+  }
+  .board.editing .resize-handle{ display:block; }
+  .resize-handle svg{ width:100%; height:100%; stroke:currentColor; }
 
   /* ---------- progress ---------- */
   .progress-row{ display:flex; align-items:center; gap:8px; margin-bottom:12px; }
   .progress-row .bar{ flex:1; height:6px; border-radius:4px; background:var(--grid); overflow:hidden; }
   .progress-row .bar i{ display:block; height:100%; background:var(--accent); border-radius:4px; transition:width .3s; }
-  .progress-row .pct{ font-size:11px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; flex:none; }
+  .progress-row .pct{ font-size:11px; color:var(--ink-soft); font-family:var(--mono); flex:none; }
 
   /* ---------- shared form controls ---------- */
   .add-row{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
@@ -138,7 +160,7 @@
     padding:8px 9px; font-size:13px;
   }
   .add-row input[type=text]{ flex:1 1 110px; min-width:0; }
-  .add-row input[type=date]{ flex:0 0 132px; font-family:'IBM Plex Mono',monospace; font-size:12px; }
+  .add-row input[type=date]{ flex:0 0 132px; font-family:var(--mono); font-size:12px; }
   .add-row select{ flex:0 0 76px; }
   .add-row input:focus, textarea:focus, select:focus{ outline:none; border-color:var(--accent); }
   .add-row > button{
@@ -159,14 +181,14 @@
   .cal-nav button{ border:1px solid var(--grid); background:var(--cell-alt); border-radius:6px; color:var(--ink-soft); width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:12px; }
   .cal-nav button:hover{ border-color:var(--accent); color:var(--accent); }
   .cal-nav .today-btn{ width:auto; padding:0 9px; font-size:11px; font-weight:600; }
-  .cal-month{ font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:12px; min-width:60px; text-align:center; }
+  .cal-month{ font-family:var(--mono); font-weight:600; font-size:12px; min-width:60px; text-align:center; }
   table.cal{ width:100%; border-collapse:separate; border-spacing:2px 4px; table-layout:fixed; }
   table.cal th{ font-size:11px; font-weight:600; color:var(--ink-soft); padding:2px 0 6px; }
   table.cal th.sun{ color:var(--sun); }
   table.cal th.sat{ color:var(--sat); }
   table.cal td{
-    height:42px; vertical-align:top; padding:3px 4px; border-radius:8px;
-    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-faint); cursor:pointer;
+    height:32px; vertical-align:top; padding:2px 3px; border-radius:7px;
+    font-family:var(--mono); font-size:12px; color:var(--ink-faint); cursor:pointer;
   }
   table.cal td:hover{ background:var(--accent-soft); }
   table.cal td.cur{ color:var(--ink); }
@@ -189,10 +211,10 @@
   li.sched[data-priority="낮음"] .pr{ background:var(--accent); }
   li.sched .body{ flex:1; min-width:0; }
   li.sched .txt{ display:block; overflow-wrap:break-word; }
-  li.sched .meta{ display:flex; align-items:center; gap:5px; font-size:11px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; margin-top:2px; }
-  li.sched .meta .rep{ background:var(--accent-soft); color:var(--accent); border-radius:5px; padding:0 5px; font-family:'Noto Sans KR',sans-serif; font-weight:600; }
+  li.sched .meta{ display:flex; align-items:center; gap:5px; font-size:11px; color:var(--ink-faint); font-family:var(--mono); margin-top:2px; }
+  li.sched .meta .rep{ background:var(--accent-soft); color:var(--accent); border-radius:5px; padding:0 5px; font-family:var(--ui); font-weight:600; }
   li.sched.done .txt{ color:var(--ink-faint); text-decoration:line-through; }
-  .progress-pill{ flex:none; border:1px solid var(--grid-strong); background:var(--cell); border-radius:7px; font-size:11px; padding:3px 8px; color:var(--ink-soft); white-space:nowrap; font-family:'IBM Plex Mono',monospace; font-weight:600; min-width:38px; text-align:center; }
+  .progress-pill{ flex:none; border:1px solid var(--grid-strong); background:var(--cell); border-radius:7px; font-size:11px; padding:3px 8px; color:var(--ink-soft); white-space:nowrap; font-family:var(--mono); font-weight:600; min-width:38px; text-align:center; }
   li.sched[data-progress="0"] .progress-pill{ color:var(--ink-faint); }
   li.sched:not([data-progress="0"]):not([data-progress="100"]) .progress-pill{ background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
   li.sched[data-progress="100"] .progress-pill{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
@@ -203,10 +225,10 @@
   .sched-group-head .name{ font-weight:700; font-size:13px; flex:1; min-width:0; overflow-wrap:break-word; }
   .sched-group-head .bar{ width:64px; height:6px; border-radius:4px; background:var(--grid); overflow:hidden; flex:none; }
   .sched-group-head .bar i{ display:block; height:100%; background:var(--accent); border-radius:4px; }
-  .sched-group-head .pct{ font-size:11px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; flex:none; width:34px; text-align:right; }
+  .sched-group-head .pct{ font-size:11px; color:var(--ink-soft); font-family:var(--mono); flex:none; width:34px; text-align:right; }
 
   /* ---------- memo ---------- */
-  textarea{ width:100%; min-height:130px; resize:vertical; border:1px solid var(--grid); border-radius:9px; background:var(--cell-alt); padding:10px 12px; font-size:14px; line-height:1.7; font-family:'Gowun Batang', serif; }
+  textarea{ width:100%; min-height:80px; resize:vertical; border:1px solid var(--grid); border-radius:9px; background:var(--cell-alt); padding:8px 10px; font-size:13px; line-height:1.6; font-family:var(--ui); }
   .save-flag{ display:block; text-align:right; font-size:11px; color:var(--ink-faint); margin-top:6px; height:14px; }
   .save-flag.show{ color:var(--accent); }
 
@@ -226,20 +248,20 @@
   .dock button.pin .letter{
     width:22px; height:22px; border-radius:50%; background:var(--accent); color:var(--accent-ink);
     display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;
-    font-family:'IBM Plex Mono',monospace;
+    font-family:var(--mono);
   }
 
   /* ---------- messaging / contacts ---------- */
   .msg-template{ margin-bottom:12px; }
   .msg-template label{ display:block; font-size:11px; color:var(--ink-soft); margin-bottom:5px; }
-  .msg-template textarea{ min-height:64px; font-family:'Noto Sans KR',sans-serif; font-size:13px; line-height:1.6; }
+  .msg-template textarea{ min-height:52px; font-family:var(--ui); font-size:13px; line-height:1.6; }
   .msg-broadcast{ width:100%; border:1px solid var(--grid-strong); background:var(--accent); color:var(--accent-ink); border-radius:8px; font-weight:700; font-size:13px; padding:9px; margin-bottom:12px; display:flex; align-items:center; justify-content:center; gap:6px; }
   .msg-broadcast svg{ width:14px; height:14px; stroke:currentColor; }
   .msg-broadcast:hover{ filter:brightness(1.05); }
   .msg-hint{ font-size:11px; color:var(--ink-faint); margin:-6px 0 12px; }
   li.contact .body{ flex:1; min-width:0; }
   li.contact .name{ font-weight:600; }
-  li.contact .phone{ display:block; font-size:11px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; margin-top:2px; }
+  li.contact .phone{ display:block; font-size:11px; color:var(--ink-faint); font-family:var(--mono); margin-top:2px; }
   .contact-actions{ display:flex; gap:4px; flex:none; }
   .contact-actions a{ width:26px; height:26px; display:flex; align-items:center; justify-content:center; border:1px solid var(--grid-strong); border-radius:7px; background:var(--cell); color:var(--ink-soft); text-decoration:none; }
   .contact-actions a svg{ width:13px; height:13px; stroke:currentColor; }
@@ -249,14 +271,14 @@
   /* ---------- d-day ---------- */
   .dday-add{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
   .dday-add input[type=text]{ flex:1 1 100px; min-width:0; border:1px solid var(--grid); background:var(--cell-alt); border-radius:8px; padding:8px 10px; font-size:13px; }
-  .dday-add input[type=date]{ flex:1 1 130px; border:1px solid var(--grid); background:var(--cell-alt); border-radius:8px; padding:7px 8px; font-size:12px; font-family:'IBM Plex Mono',monospace;}
+  .dday-add input[type=date]{ flex:1 1 130px; border:1px solid var(--grid); background:var(--cell-alt); border-radius:8px; padding:7px 8px; font-size:12px; font-family:var(--mono);}
   ul.dday-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
   ul.dday-list li{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:9px; background:var(--cell-alt); font-size:13px; }
-  ul.dday-list li .tag{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:11px; padding:3px 6px; border-radius:6px; border:1px solid var(--grid-strong); color:var(--gold); flex:none; min-width:48px; text-align:center; }
+  ul.dday-list li .tag{ font-family:var(--mono); font-weight:700; font-size:11px; padding:3px 6px; border-radius:6px; border:1px solid var(--grid-strong); color:var(--gold); flex:none; min-width:48px; text-align:center; }
   ul.dday-list li.past .tag{ color:var(--ink-faint); }
   ul.dday-list li.today .tag{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
   ul.dday-list li .name{ flex:1; min-width:0; overflow-wrap:break-word; }
-  ul.dday-list li .when{ font-size:11px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; flex:none; }
+  ul.dday-list li .when{ font-size:11px; color:var(--ink-faint); font-family:var(--mono); flex:none; }
   ul.dday-list li .del{ flex:none; border:none; background:none; color:var(--ink-faint); font-size:15px; opacity:0; transition:opacity .15s; }
   ul.dday-list li:hover .del{ opacity:1; }
   ul.dday-list li .del:hover{ color:var(--warn); }
@@ -268,7 +290,7 @@
   .ai-quick button:hover{ background:var(--accent); color:var(--accent-ink); }
   .ai-quick button:disabled{ opacity:0.4; cursor:default; }
   .ai-out{
-    min-height:64px; max-height:260px; overflow-y:auto;
+    min-height:44px; max-height:150px; overflow-y:auto;
     background:var(--cell-alt); border:1px solid var(--grid); border-radius:9px;
     padding:12px 14px; font-size:13.5px; line-height:1.7; white-space:pre-wrap; word-break:break-word;
   }
@@ -307,6 +329,7 @@
   .dock button{ position:relative; flex:none; width:42px; height:42px; display:flex; align-items:center; justify-content:center; background:none; border:none; border-radius:11px; color:var(--ink-soft); }
   .dock button svg{ width:18px; height:18px; stroke:currentColor; }
   .dock button:hover, .dock button:focus-visible{ color:var(--accent); background:var(--accent-soft); outline:none; }
+  .dock button#editBtn.active{ color:var(--accent-ink); background:var(--accent); }
   .dock button .tip{ position:absolute; bottom:52px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--paper); border-radius:6px; font-size:11px; padding:3px 7px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .12s; }
   .dock button:hover .tip, .dock button:focus-visible .tip{ opacity:1; }
   .dock .sep{ width:1px; background:var(--grid); margin:6px 3px; flex:none; }
@@ -316,7 +339,7 @@
   .modal-back{ position:fixed; inset:0; background:rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; padding:20px; z-index:20; }
   .modal-back.open{ display:flex; }
   .modal{ background:var(--cell); border:1px solid var(--grid-strong); border-radius:14px; max-width:380px; width:100%; padding:20px; box-shadow:0 20px 40px rgba(0,0,0,0.25); }
-  .modal h3{ margin:0 0 10px; font-family:'Gowun Batang',serif; font-size:18px; }
+  .modal h3{ margin:0 0 10px; font-family:var(--ui); font-size:18px; }
   .modal p{ margin:0 0 8px; font-size:13px; color:var(--ink-soft); line-height:1.6; }
   .modal button{ margin-top:10px; width:100%; border:1px solid var(--grid-strong); background:var(--accent); color:var(--accent-ink); border-radius:8px; padding:9px; font-weight:600; font-size:13px; }
 
@@ -353,7 +376,7 @@
     </div>
   </header>
 
-  <div class="board">
+  <div class="board" id="board">
 
     <section class="panel ga-cal" id="panel-cal">
       <div class="panel-head">
@@ -530,6 +553,9 @@
     <button id="tidyBtn"><span class="tip">완료 항목 정리</span>
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 5H9l-7 7 7 7h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z"/><path d="M18 9l-6 6M12 9l6 6"/></svg>
     </button>
+    <button id="editBtn"><span class="tip">레이아웃 편집</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
     <button id="infoBtn"><span class="tip">이 판에 대해</span>
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/></svg>
     </button>
@@ -544,6 +570,7 @@
     <h3 class="serif">그리드 데스크</h3>
     <p>학교용 위젯 프로그램의 짜임새를 참고해 만든 개인용 데스크톱 위젯이에요. 달력·일정·할일·자료함·메시지 발송·메모·AI 도우미·D-Day를 담았어요.</p>
     <p>빈 곳을 클릭하면 그 아래 바탕화면 아이콘이 그대로 눌려요. 화면 오른쪽 아래 트레이 아이콘을 오른쪽 클릭하면 새로고침·앞으로 보기·모니터 선택·시작 시 자동 실행·종료를 할 수 있어요. <b>Ctrl+Alt+D</b>로 언제든 앞으로 가져올 수 있어요.</p>
+    <p>하단 독의 <b>톱니바퀴</b>를 누르면 편집 모드가 켜져요 — 각 칸의 위쪽 제목 줄을 눌러 끌면 위치가, 오른쪽 아래 모서리를 끌면 크기가 바뀌어요. 한 번 옮기면 이 컴퓨터에서는 계속 그 자리에 저장돼요.</p>
     <button id="modalClose">닫기</button>
   </div>
 </div>
@@ -1089,6 +1116,125 @@
       if(id === 'panel-ai') document.getElementById('quickInput').focus({preventScroll:true});
     });
   });
+
+  /* ---------- layout editing: drag & resize panels (freeform, saved on this computer) ---------- */
+  (function(){
+    var board = document.getElementById('board');
+    var editBtn = document.getElementById('editBtn');
+    var PANEL_IDS = ['panel-cal','panel-sched','panel-material','panel-memo','panel-contact','panel-ai','panel-dday'];
+    var layout = load('griddesk.layout', {});
+    var editing = false;
+
+    function applySaved(){
+      var rect = board.getBoundingClientRect();
+      PANEL_IDS.forEach(function(id){
+        var pos = layout[id];
+        if(!pos) return;
+        var el = document.getElementById(id);
+        el.classList.add('placed');
+        el.style.left = (pos.xPct / 100 * rect.width) + 'px';
+        el.style.top = (pos.yPct / 100 * rect.height) + 'px';
+        el.style.width = (pos.wPct / 100 * rect.width) + 'px';
+      });
+    }
+
+    function ensureHandle(el){
+      if(el.querySelector('.resize-handle')) return el.querySelector('.resize-handle');
+      var h = document.createElement('span');
+      h.className = 'resize-handle';
+      h.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M21 15v6h-6M21 21 13 13"/><path d="M9 3H3v6"/></svg>';
+      el.appendChild(h);
+      return h;
+    }
+
+    function recordPosition(el){
+      var bx = board.getBoundingClientRect();
+      var pr = el.getBoundingClientRect();
+      layout[el.id] = {
+        xPct: (pr.left - bx.left) / bx.width * 100,
+        yPct: (pr.top - bx.top) / bx.height * 100,
+        wPct: pr.width / bx.width * 100
+      };
+      save('griddesk.layout', layout);
+    }
+
+    function startDrag(panelEl, e){
+      if(!editing) return;
+      e.preventDefault();
+      var boardRect = board.getBoundingClientRect();
+      var startRect = panelEl.getBoundingClientRect();
+      var offX = e.clientX - startRect.left;
+      var offY = e.clientY - startRect.top;
+      panelEl.classList.add('placed', 'dragging');
+      panelEl.style.width = startRect.width + 'px';
+      panelEl.style.left = (startRect.left - boardRect.left) + 'px';
+      panelEl.style.top = (startRect.top - boardRect.top) + 'px';
+
+      function onMove(ev){
+        var bx = board.getBoundingClientRect();
+        var x = Math.max(0, Math.min(ev.clientX - bx.left - offX, bx.width - 60));
+        var y = Math.max(0, Math.min(ev.clientY - bx.top - offY, bx.height - 40));
+        panelEl.style.left = x + 'px';
+        panelEl.style.top = y + 'px';
+      }
+      function onUp(){
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        panelEl.classList.remove('dragging');
+        recordPosition(panelEl);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    }
+
+    function startResize(panelEl, e){
+      if(!editing) return;
+      e.preventDefault();
+      e.stopPropagation();
+      var boardRect = board.getBoundingClientRect();
+      var startRect = panelEl.getBoundingClientRect();
+      panelEl.classList.add('placed');
+      panelEl.style.left = (startRect.left - boardRect.left) + 'px';
+      panelEl.style.top = (startRect.top - boardRect.top) + 'px';
+      panelEl.style.width = startRect.width + 'px';
+      var startX = e.clientX;
+      var startW = startRect.width;
+
+      function onMove(ev){
+        var bx = board.getBoundingClientRect();
+        var left = parseFloat(panelEl.style.left) || 0;
+        var w = Math.max(200, Math.min(startW + (ev.clientX - startX), bx.width - left));
+        panelEl.style.width = w + 'px';
+      }
+      function onUp(){
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        recordPosition(panelEl);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    }
+
+    PANEL_IDS.forEach(function(id){
+      var el = document.getElementById(id);
+      var head = el.querySelector('.panel-head');
+      head.addEventListener('mousedown', function(e){
+        if(e.target.closest('button')) return;
+        startDrag(el, e);
+      });
+      var handle = ensureHandle(el);
+      handle.addEventListener('mousedown', function(e){ startResize(el, e); });
+    });
+
+    editBtn.addEventListener('click', function(){
+      editing = !editing;
+      editBtn.classList.toggle('active', editing);
+      board.classList.toggle('editing', editing);
+    });
+
+    window.addEventListener('resize', applySaved);
+    applySaved();
+  })();
 
   /* ---------- info modal ---------- */
   var modalBack = document.getElementById('modalBack');
