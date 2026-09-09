@@ -61,33 +61,34 @@
   button{ cursor:pointer; }
 
   .page{
-    max-width:1180px; margin:0 auto; padding: 18px 18px 118px;
-    height:100vh; overflow-y:auto;
-    scrollbar-width:none;
+    max-width:1600px; margin:0 auto; padding: 14px 16px 96px;
+    height:100vh; overflow:hidden;
+    display:flex; flex-direction:column;
   }
-  .page::-webkit-scrollbar{ display:none; }
 
   /* ---------- header ---------- */
   .head{
     display:flex; justify-content:space-between; align-items:flex-end; gap:20px;
-    padding-bottom:12px; margin-bottom:14px; border-bottom:2px solid var(--grid-strong); flex-wrap:wrap;
+    padding-bottom:10px; margin-bottom:12px; border-bottom:2px solid var(--grid-strong); flex-wrap:wrap;
+    flex:none;
   }
-  .clock{ font-size:clamp(30px,5vw,44px); font-weight:600; letter-spacing:0.01em; line-height:1; }
+  .clock{ font-size:clamp(28px,4vw,40px); font-weight:600; letter-spacing:0.01em; line-height:1; }
   .clock small{ font-size:0.42em; color:var(--ink-soft); margin-left:4px; font-weight:500;}
-  .date-line{ margin-top:8px; font-size:15px; color:var(--ink-soft); }
+  .date-line{ margin-top:6px; font-size:14px; color:var(--ink-soft); }
   .date-line b{ color:var(--ink); font-weight:600; }
   .greet{ text-align:right; max-width:280px; }
-  .greet .title{ font-size:20px; margin-bottom:4px; }
-  .greet .sub{ font-size:13px; color:var(--ink-soft); }
+  .greet .title{ font-size:18px; margin-bottom:3px; }
+  .greet .sub{ font-size:12px; color:var(--ink-soft); }
 
-  /* ---------- widget grid ---------- */
+  /* ---------- widget grid: row1 달력(2):일정(1):메모(1), row2 네 칸 균등 ---------- */
   .board{
-    display:grid; gap:12px;
-    grid-template-columns: 1fr 1fr 1fr;
+    flex:1; min-height:0;
+    display:grid; gap:10px;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: 1.25fr 1fr;
     grid-template-areas:
-      "cal      cal    sched"
-      "material memo   contact"
-      "ai       ai     dday";
+      "cal      cal      sched    memo"
+      "ai       material contact  dday";
     position:relative;
   }
   .ga-cal{ grid-area:cal; }
@@ -100,13 +101,15 @@
   @media (max-width:980px){
     .board{
       grid-template-columns: 1fr 1fr;
+      grid-template-rows: repeat(4, auto);
       grid-template-areas:
         "cal      cal"
         "sched    memo"
-        "material contact"
-        "ai       ai"
-        "dday     dday";
+        "ai       material"
+        "contact  dday";
+      overflow-y:auto; scrollbar-width:none;
     }
+    .board::-webkit-scrollbar{ display:none; }
   }
   @media (max-width:640px){
     .board{ grid-template-columns:1fr; grid-template-areas:none; }
@@ -120,7 +123,7 @@
   .board.editing .panel.dragging{ z-index:6; box-shadow:0 10px 24px rgba(0,0,0,0.18); }
 
   .panel{
-    position:relative;
+    position:relative; min-height:0; min-width:0;
     background:var(--cell); border:1px solid var(--grid); border-radius:10px;
     box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column;
     scroll-margin-top:20px;
@@ -435,6 +438,34 @@
       </div>
     </section>
 
+    <section class="panel ai-panel ga-ai" id="panel-ai">
+      <div class="panel-head">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z"/></svg>AI 도우미</h2>
+        <span class="count" id="aiStatus"></span>
+      </div>
+      <div class="panel-body">
+        <div class="qc-block">
+          <label>한 줄로 적으면 <b>할 일 · 달력 일정 · D-Day · 연락처 · 메모</b> 가운데 어디에 넣을지 갈라 보여드립니다. 확인하신 뒤에 저장됩니다.</label>
+          <div class="qc-row">
+            <input type="text" id="quickInput" placeholder="예: 내일까지 계약서 검토하기, 9/2 여행 디데이 등록" disabled>
+            <button id="quickBtn" disabled>분류</button>
+          </div>
+          <div class="qc-preview" id="quickPreview" hidden></div>
+        </div>
+        <div class="ai-quick">
+          <button id="aiBriefBtn" disabled>오늘 브리핑</button>
+          <button id="aiTidyBtn" disabled>메모 정리해줘</button>
+          <button id="aiStopBtn" hidden>중단</button>
+        </div>
+        <div class="ai-out" id="aiOut"></div>
+        <div class="ai-input-row">
+          <input type="text" id="aiInput" placeholder="무엇이든 물어보세요" disabled>
+          <button id="aiAsk" disabled>물어보기</button>
+        </div>
+        <div class="ai-note" id="aiNote">이 데스크톱 앱에서는 AI 도우미가 아직 연결되어 있지 않아요.</div>
+      </div>
+    </section>
+
     <section class="panel ga-material" id="panel-material">
       <div class="panel-head">
         <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8V7a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4"/><path d="M13 17l6-6M13 17h5v-5"/></svg>자료함</h2>
@@ -475,33 +506,6 @@
       </div>
     </section>
 
-    <section class="panel ai-panel ga-ai" id="panel-ai">
-      <div class="panel-head">
-        <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z"/></svg>AI 도우미</h2>
-        <span class="count" id="aiStatus"></span>
-      </div>
-      <div class="panel-body">
-        <div class="qc-block">
-          <label>한 줄로 적으면 <b>할 일 · 달력 일정 · D-Day · 연락처 · 메모</b> 가운데 어디에 넣을지 갈라 보여드립니다. 확인하신 뒤에 저장됩니다.</label>
-          <div class="qc-row">
-            <input type="text" id="quickInput" placeholder="예: 내일까지 계약서 검토하기, 9/2 여행 디데이 등록" disabled>
-            <button id="quickBtn" disabled>분류</button>
-          </div>
-          <div class="qc-preview" id="quickPreview" hidden></div>
-        </div>
-        <div class="ai-quick">
-          <button id="aiBriefBtn" disabled>오늘 브리핑</button>
-          <button id="aiTidyBtn" disabled>메모 정리해줘</button>
-          <button id="aiStopBtn" hidden>중단</button>
-        </div>
-        <div class="ai-out" id="aiOut"></div>
-        <div class="ai-input-row">
-          <input type="text" id="aiInput" placeholder="무엇이든 물어보세요" disabled>
-          <button id="aiAsk" disabled>물어보기</button>
-        </div>
-        <div class="ai-note" id="aiNote">이 데스크톱 앱에서는 AI 도우미가 아직 연결되어 있지 않아요.</div>
-      </div>
-    </section>
 
     <section class="panel ga-dday" id="panel-dday">
       <div class="panel-head">
