@@ -496,8 +496,8 @@
         <div class="qc-block">
           <label>한 줄로 적으면 <b>할 일 · 달력 일정 · D-Day · 연락처 · 메모</b> 가운데 어디에 넣을지 갈라 보여드립니다. 확인하신 뒤에 저장됩니다.</label>
           <div class="qc-row">
-            <input type="text" id="quickInput" placeholder="예: 내일까지 계약서 검토하기, 9/2 여행 디데이 등록" disabled>
-            <button id="quickBtn" disabled>분류</button>
+            <input type="text" id="quickInput" placeholder="예: 내일까지 계약서 검토하기, 9/2 여행 디데이 등록">
+            <button id="quickBtn">분류</button>
           </div>
           <div class="qc-preview" id="quickPreview" hidden></div>
         </div>
@@ -1366,23 +1366,143 @@
   });
 
   /* ---------- ai helper ----------
-     Not wired up yet in the desktop build: the web version's AI panel used
-     claude.ai's built-in "sample" capability (the viewer's own Claude
-     account, no API key), which only exists inside a claude.ai-hosted
-     page. A standalone desktop app has no such bridge, so every control
-     below simply stays disabled with an explanatory note. Wiring this to
-     a real answer needs an Anthropic API key entered by the user and a
-     small HTTPS call from main.js — left for a follow-up. */
+     "무엇이든 물어보기" / "오늘 브리핑" / "메모 정리해줘" need a real language
+     model (the web version used claude.ai's own "sample" bridge, which only
+     exists inside a claude.ai-hosted page; a standalone desktop app has none,
+     so those stay disabled until an Anthropic API key is wired in).
+
+     The 한 줄 분류 box below is different: it doesn't need any AI call at
+     all. It just pattern-matches the text locally (dates, phone numbers,
+     키워드 like "디데이"/"연락처") and guesses which of 일정·D-Day·연락처·메모
+     it belongs to, then shows a preview to confirm before saving. */
   (function(){
     var askBtn = document.getElementById('aiAsk');
     var input = document.getElementById('aiInput');
     var briefBtn = document.getElementById('aiBriefBtn');
     var tidyBtn = document.getElementById('aiTidyBtn');
+    askBtn.disabled = true; input.disabled = true; briefBtn.disabled = true; tidyBtn.disabled = true;
+    document.getElementById('aiStatus').textContent = '한 줄 분류만 가능';
+    document.getElementById('aiNote').textContent = '자유 대화(무엇이든 물어보기·브리핑·메모 정리)는 아직 연결 전이에요. 위 분류 기능은 AI 없이 바로 동작해요.';
+  })();
+
+  /* ---------- quick classify (한 줄 입력 -> 일정/D-Day/연락처/메모 자동 분류) ---------- */
+  (function(){
     var quickInput = document.getElementById('quickInput');
     var quickBtn = document.getElementById('quickBtn');
-    askBtn.disabled = true; input.disabled = true; briefBtn.disabled = true; tidyBtn.disabled = true;
-    quickInput.disabled = true; quickBtn.disabled = true;
-    document.getElementById('aiStatus').textContent = '사용 불가';
+    var quickPreview = document.getElementById('quickPreview');
+    var pending = null;
+
+    function pad2(n){ return n < 10 ? '0'+n : ''+n; }
+    function toIso(y,m,d){ return y + '-' + pad2(m) + '-' + pad2(d); }
+    function stripEdges(s){ return s.replace(/^[,\.·\-\s:]+|[,\.·\-\s:]+$/g, '').trim(); }
+
+    function parseQuickInput(raw){
+      var text = raw.trim();
+      var now = new Date(); now.setHours(0,0,0,0);
+      var dateIso = null, dateMatch = null, m;
+
+      if((m = text.match(/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/))){
+        dateIso = toIso(+m[1], +m[2], +m[3]); dateMatch = m[0];
+      } else if((m = text.match(/(\d{1,2})월\s*(\d{1,2})일/))){
+        var y1 = now.getFullYear();
+        if(new Date(y1, +m[1]-1, +m[2]) < now) y1++;
+        dateIso = toIso(y1, +m[1], +m[2]); dateMatch = m[0];
+      } else if((m = text.match(/(?:^|[^\d])(\d{1,2})[.\/](\d{1,2})(?!\d)/))){
+        var mm = +m[1], dd = +m[2], y2 = now.getFullYear();
+        if(new Date(y2, mm-1, dd) < now) y2++;
+        dateIso = toIso(y2, mm, dd); dateMatch = m[0].replace(/^[^\d]/, '');
+      } else if(/모레/.test(text)){
+        var d2 = new Date(now); d2.setDate(d2.getDate()+2); dateIso = isoOf(d2); dateMatch = '모레';
+      } else if(/내일/.test(text)){
+        var d1 = new Date(now); d1.setDate(d1.getDate()+1); dateIso = isoOf(d1); dateMatch = '내일';
+      } else if(/다음\s*주/.test(text)){
+        var d7 = new Date(now); d7.setDate(d7.getDate()+7); dateIso = isoOf(d7); dateMatch = '다음주';
+      } else if(/오늘/.test(text)){
+        dateIso = isoOf(now); dateMatch = '오늘';
+      }
+
+      var titleBase = dateMatch ? text.replace(dateMatch, '') : text;
+      titleBase = stripEdges(titleBase.replace(/^(까지|부터|에는|에|쯤|경)\s*/, ''));
+
+      var phoneMatch = text.match(/01[0-9]-?\d{3,4}-?\d{4}|0\d{1,2}-\d{3,4}-\d{4}/);
+      if(phoneMatch){
+        var cname = stripEdges(text.replace(phoneMatch[0], '').replace(/연락처|전화번호|전화|번호|등록|추가/g, ''));
+        return { kind:'contact', name: cname || '새 연락처', phone: phoneMatch[0] };
+      }
+
+      if(/디데이|d-?day|기념일/i.test(text)){
+        if(dateIso){
+          var dname = stripEdges(titleBase.replace(/디데이|d-?day|기념일|등록|추가/gi, ''));
+          return { kind:'dday', name: dname || '디데이', date: dateIso };
+        }
+        return { kind:'memo', text: text, note:'날짜를 못 찾아서 메모로 넣었어요.' };
+      }
+
+      if(dateIso || /하기$|검토|제출|회의|준비|예약|확인|마감|납부|참석/.test(text)){
+        return { kind:'sched', title: titleBase || text, date: dateIso || isoOf(now) };
+      }
+
+      return { kind:'memo', text: text };
+    }
+
+    function kindMeta(k){
+      return {
+        sched:  { label:'일정·할일', cls:'k-sched' },
+        dday:   { label:'D-Day',    cls:'k-dday' },
+        contact:{ label:'연락처',    cls:'k-contact' },
+        memo:   { label:'메모',      cls:'k-memo' }
+      }[k];
+    }
+
+    function renderPreview(parsed){
+      pending = parsed;
+      var meta = kindMeta(parsed.kind);
+      var line;
+      if(parsed.kind === 'sched') line = parsed.title + ' · ' + parsed.date;
+      else if(parsed.kind === 'dday') line = parsed.name + ' · ' + parsed.date;
+      else if(parsed.kind === 'contact') line = parsed.name + ' · ' + parsed.phone;
+      else line = parsed.text;
+
+      quickPreview.className = 'qc-preview ' + meta.cls;
+      quickPreview.innerHTML =
+        '<div class="qc-summary"><b>[' + meta.label + ']</b> ' + line +
+          (parsed.note ? '<br><span style="color:var(--ink-faint);font-size:11px;">' + parsed.note + '</span>' : '') +
+        '</div>' +
+        '<div class="qc-actions"><button class="save" id="qcSave">저장</button><button class="cancel" id="qcCancel">취소</button></div>';
+      quickPreview.hidden = false;
+      document.getElementById('qcSave').addEventListener('click', commit);
+      document.getElementById('qcCancel').addEventListener('click', function(){ quickPreview.hidden = true; pending = null; });
+    }
+
+    function commit(){
+      if(!pending) return;
+      var p = pending;
+      if(p.kind === 'sched'){
+        schedule.push({id: schedNextId++, title:p.title, date:p.date, project:'개인', priority:'중간', progress:0, repeat:'none'});
+        save('griddesk.schedule', schedule); save('griddesk.schedule.nextId', schedNextId);
+        renderSched(); renderCal(); flashPanel('panel-sched');
+      } else if(p.kind === 'dday'){
+        ddays.push({n:p.name, d:p.date}); save('griddesk.ddays', ddays);
+        renderDdays(); flashPanel('dday-section');
+      } else if(p.kind === 'contact'){
+        contacts.push({id: contactNextId++, name:p.name, phone:p.phone, email:''});
+        save('griddesk.contacts', contacts); save('griddesk.contacts.nextId', contactNextId);
+        renderContacts(); flashPanel('panel-contact');
+      } else {
+        var sep = memoBox.value && !/\n$/.test(memoBox.value) ? '\n' : '';
+        memoBox.value = memoBox.value + sep + '- ' + p.text;
+        save('griddesk.memo', memoBox.value); updateMemoCount(); flashPanel('panel-memo');
+      }
+      quickInput.value = ''; quickPreview.hidden = true; pending = null;
+    }
+
+    function run(){
+      var text = quickInput.value.trim();
+      if(!text) return;
+      renderPreview(parseQuickInput(text));
+    }
+    quickBtn.addEventListener('click', run);
+    quickInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') run(); });
   })();
 
 })();
