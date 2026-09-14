@@ -106,17 +106,17 @@
   ul.dday-list.horiz li{ flex:none; }
 
   /* ---------- widget grid ----------
-     4 cols x 3 rows. 왼쪽은 달력이 통째로, 오른쪽은 위부터 할일(2)-일정(1)-메모(1)
-     세로로 쌓임. (D-Day는 헤더 안에 표시. 자료함·메시지 발송·AI 도우미는 독 버튼 팝업) */
+     4 cols x 2 rows. 달력·할일 둘 다 세로로 길게, 그 오른쪽은 2층
+     (위 일정 / 아래 메모). (D-Day는 헤더 안에 표시. 자료함·메시지 발송·
+     AI 도우미는 독 버튼 팝업) */
   .board{
     flex:1; min-height:0;
     display:grid; gap:10px;
     grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: 2fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
     grid-template-areas:
-      "cal cal todo  todo"
-      "cal cal event event"
-      "cal cal memo  memo";
+      "cal cal todo event"
+      "cal cal todo memo";
     position:relative;
   }
   .ga-cal{ grid-area:cal; }
