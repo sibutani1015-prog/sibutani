@@ -112,7 +112,7 @@
     flex:1; min-height:0;
     display:grid; gap:10px;
     grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: 5fr 3fr 2fr;
+    grid-template-rows: 4fr 3fr 3fr;
     grid-template-areas:
       "cal cal sched sched"
       "cal cal memo  memo"
@@ -327,7 +327,7 @@
   ul.dday-list li .del:hover{ color:var(--warn); }
 
   /* ---------- ai helper ---------- */
-  .ai-panel .panel-body{ display:flex; flex-direction:column; gap:10px; }
+  .ai-panel .panel-body{ display:flex; flex-direction:column; gap:6px; padding:8px 10px 10px; }
   .ai-quick{ display:flex; gap:8px; flex-wrap:wrap; }
   .ai-quick button{ border:1px solid var(--grid-strong); background:var(--accent-soft); color:var(--accent); border-radius:20px; font-size:12px; font-weight:600; padding:6px 13px; }
   .ai-quick button:hover{ background:var(--accent); color:var(--accent-ink); }
@@ -346,8 +346,8 @@
   .ai-input-row button:disabled{ opacity:0.5; }
   .ai-note{ font-size:11px; color:var(--ink-faint); }
 
-  .qc-block{ border:1px solid var(--grid-strong); background:var(--accent-soft); border-radius:16px; padding:12px; }
-  .qc-block label{ display:block; font-size:12px; color:var(--ink-soft); line-height:1.5; margin-bottom:8px; }
+  .qc-block{ border:1px solid var(--grid-strong); background:var(--accent-soft); border-radius:16px; padding:10px; }
+  .qc-block label{ display:block; font-size:12px; color:var(--ink-soft); line-height:1.45; margin-bottom:6px; }
   .qc-block label b{ color:var(--accent); }
   .qc-row{ display:flex; gap:8px; }
   .qc-row input{ flex:1; min-width:0; border:1px solid var(--grid); background:var(--cell); border-radius:12px; padding:9px 11px; font-size:13px; }
@@ -521,24 +521,26 @@
       </div>
       <div class="panel-body">
         <div class="qc-block">
-          <label>한 줄로 적으면 <b>할 일 · 달력 일정 · D-Day · 연락처 · 메모</b> 가운데 어디에 넣을지 갈라 보여드립니다. 확인하신 뒤에 저장됩니다.</label>
+          <label>한 줄 적으면 <b>일정 · D-Day · 연락처 · 메모</b>로 자동 분류해요.</label>
           <div class="qc-row">
             <input type="text" id="quickInput" placeholder="예: 내일까지 계약서 검토하기, 9/2 여행 디데이 등록">
             <button id="quickBtn">분류</button>
           </div>
           <div class="qc-preview" id="quickPreview" hidden></div>
         </div>
-        <div class="ai-quick">
-          <button id="aiBriefBtn" disabled>오늘 브리핑</button>
-          <button id="aiTidyBtn" disabled>메모 정리해줘</button>
-          <button id="aiStopBtn" hidden>중단</button>
+        <div id="aiChatBlock" hidden>
+          <div class="ai-quick">
+            <button id="aiBriefBtn" disabled>오늘 브리핑</button>
+            <button id="aiTidyBtn" disabled>메모 정리해줘</button>
+            <button id="aiStopBtn" hidden>중단</button>
+          </div>
+          <div class="ai-out" id="aiOut"></div>
+          <div class="ai-input-row">
+            <input type="text" id="aiInput" placeholder="무엇이든 물어보세요" disabled>
+            <button id="aiAsk" disabled>물어보기</button>
+          </div>
         </div>
-        <div class="ai-out" id="aiOut"></div>
-        <div class="ai-input-row">
-          <input type="text" id="aiInput" placeholder="무엇이든 물어보세요" disabled>
-          <button id="aiAsk" disabled>물어보기</button>
-        </div>
-        <div class="ai-note" id="aiNote">이 데스크톱 앱에서는 AI 도우미가 아직 연결되어 있지 않아요.</div>
+        <div class="ai-note" id="aiNote">자유 대화(브리핑·메모 정리·질문)는 API 키가 있어야 켤 수 있어요. 필요하시면 말씀해주세요.</div>
       </div>
     </section>
 
@@ -1282,6 +1284,7 @@
         el.style.left = (pos.xPct / 100 * rect.width) + 'px';
         el.style.top = (pos.yPct / 100 * rect.height) + 'px';
         el.style.width = (pos.wPct / 100 * rect.width) + 'px';
+        if(pos.hPct) el.style.height = (pos.hPct / 100 * rect.height) + 'px';
       });
     }
 
@@ -1300,7 +1303,8 @@
       layout[el.id] = {
         xPct: (pr.left - bx.left) / bx.width * 100,
         yPct: (pr.top - bx.top) / bx.height * 100,
-        wPct: pr.width / bx.width * 100
+        wPct: pr.width / bx.width * 100,
+        hPct: pr.height / bx.height * 100
       };
       save('griddesk.layout', layout);
     }
@@ -1344,14 +1348,18 @@
       panelEl.style.left = (startRect.left - boardRect.left) + 'px';
       panelEl.style.top = (startRect.top - boardRect.top) + 'px';
       panelEl.style.width = startRect.width + 'px';
-      var startX = e.clientX;
-      var startW = startRect.width;
+      panelEl.style.height = startRect.height + 'px';
+      var startX = e.clientX, startY = e.clientY;
+      var startW = startRect.width, startH = startRect.height;
 
       function onMove(ev){
         var bx = board.getBoundingClientRect();
         var left = parseFloat(panelEl.style.left) || 0;
+        var top = parseFloat(panelEl.style.top) || 0;
         var w = Math.max(200, Math.min(startW + (ev.clientX - startX), bx.width - left));
+        var h = Math.max(120, Math.min(startH + (ev.clientY - startY), bx.height - top));
         panelEl.style.width = w + 'px';
+        panelEl.style.height = h + 'px';
       }
       function onUp(){
         document.removeEventListener('mousemove', onMove);
