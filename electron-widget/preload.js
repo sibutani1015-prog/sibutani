@@ -15,5 +15,8 @@ contextBridge.exposeInMainWorld('api', {
     remove: (key) => ipcRenderer.send('store-remove', key)
   },
 
-  exportBackup: (dataStr) => ipcRenderer.invoke('export-backup', dataStr)
+  exportBackup: (dataStr) => ipcRenderer.invoke('export-backup', dataStr),
+
+  selectPhotoFolder: () => ipcRenderer.invoke('select-photo-folder'),
+  listPhotos: () => ipcRenderer.invoke('list-photos')
 });

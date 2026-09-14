@@ -1,6 +1,7 @@
 const { app, BrowserWindow, Tray, Menu, screen, ipcMain, globalShortcut, nativeImage, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { pathToFileURL } = require('url');
 
 const STORE_PATH = path.join(app.getPath('userData'), 'griddesk-store.json');
 
@@ -188,4 +189,30 @@ ipcMain.handle('export-backup', async (event, dataStr) => {
   if (res.canceled || !res.filePath) return { ok: false };
   fs.writeFileSync(res.filePath, dataStr, 'utf-8');
   return { ok: true, path: res.filePath };
+});
+
+/* ---------- IPC: 휴식 카드용 사진 폴더 (인터넷 없이, 이 컴퓨터 안의 파일만) ---------- */
+const PHOTO_EXTS = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
+
+ipcMain.handle('select-photo-folder', async () => {
+  const res = await dialog.showOpenDialog(mainWindow, {
+    title: '휴식 카드에 보여줄 사진 폴더 선택',
+    properties: ['openDirectory']
+  });
+  if (res.canceled || !res.filePaths[0]) return null;
+  storeCache.__photoFolder = res.filePaths[0];
+  writeStore(storeCache);
+  return res.filePaths[0];
+});
+
+ipcMain.handle('list-photos', async () => {
+  const dir = storeCache.__photoFolder;
+  if (!dir) return { folder: null, files: [] };
+  try {
+    const names = fs.readdirSync(dir).filter((name) => PHOTO_EXTS.includes(path.extname(name).toLowerCase()));
+    const urls = names.map((name) => pathToFileURL(path.join(dir, name)).href);
+    return { folder: dir, files: urls };
+  } catch (e) {
+    return { folder: dir, files: [] };
+  }
 });

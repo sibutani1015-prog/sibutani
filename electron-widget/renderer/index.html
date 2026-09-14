@@ -433,6 +433,14 @@
   }
   .break-spin svg{ width:100%; height:100%; stroke:currentColor; }
   @keyframes break-spin{ to{ transform:rotate(360deg); } }
+  .break-tag{
+    display:inline-block; font-size:11px; font-weight:700; color:var(--accent);
+    background:var(--accent-soft); border-radius:20px; padding:3px 10px; margin-bottom:8px;
+  }
+  .break-msg{ font-size:15px; line-height:1.7; }
+  .break-msg.lang-en{ font-family:var(--mono); font-size:14px; }
+  .break-photo{ max-width:100%; max-height:260px; border-radius:14px; margin:4px auto; display:block; object-fit:contain; }
+  .break-photo-btn{ margin-top:8px; font-size:11px !important; padding:7px !important; }
 
   @media (prefers-reduced-motion: reduce){
     *{ transition:none !important; scroll-behavior:auto !important; }
@@ -709,9 +717,12 @@
     <div class="break-spin">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3.5-7.1"/><path d="M21 3v6h-6"/></svg>
     </div>
-    <h3 class="serif">쉬어갈 시간이에요</h3>
-    <p id="breakMsg">눈을 잠깐 감고 먼 곳을 바라보세요.</p>
+    <span class="break-tag" id="breakTag">쉬어가기</span>
+    <h3 class="serif" id="breakTitle">쉬어갈 시간이에요</h3>
+    <p id="breakMsg" class="break-msg">눈을 잠깐 감고 먼 곳을 바라보세요.</p>
+    <img id="breakPhoto" class="break-photo" alt="">
     <button id="breakClose">확인</button>
+    <button id="breakPhotoBtn" class="ghost break-photo-btn">사진 폴더 선택</button>
   </div>
 </div>
 
@@ -759,26 +770,86 @@
   setInterval(paintClock, 1000);
   setInterval(tickClock, 60000);
 
-  /* ---------- 매시 50분 휴식 알림 (API 호출 없음, 그냥 시계 확인) ---------- */
+  /* ---------- 매시 50분 휴식·연습 알림 (API 호출 없음, 그냥 시계 확인) ---------- */
   (function(){
-    var BREAK_MESSAGES = [
+    var BREAK_RESTS = [
       '눈을 잠깐 감고 먼 곳을 바라보세요.',
       '물 한 잔 마시고 기지개를 켜볼까요?',
       '어깨를 좌우로 가볍게 돌려보세요.',
       '창밖을 잠깐 바라보며 숨을 크게 쉬어보세요.',
       '자리에서 일어나 잠깐 걸어볼까요?'
     ];
+    var KOREAN_PASSAGES = [
+      '안녕하십니까. 금일 진행 상황을 간단히 보고드리겠습니다. 현재 사업은 계획대로 순조롭게 진행되고 있습니다.',
+      '말씀하신 자료는 오늘 중으로 정리하여 보고드리겠습니다. 확인이 필요하신 부분이 있으시면 언제든 말씀해 주십시오.',
+      '죄송합니다만 해당 건은 조금 더 검토가 필요할 것 같습니다. 내일 오전까지 다시 보고드려도 괜찮을까요?',
+      '이번 사업의 목적은 지역 주민들의 편의를 높이고, 행정 절차를 더 간단하게 만드는 데 있습니다.',
+      '결론부터 말씀드리면, 예산은 예정보다 조금 늘었지만 일정에는 차질이 없습니다.',
+      '오늘 회의에서는 세 가지 안건을 다루었으며, 그중 두 가지는 합의가 이루어졌습니다.'
+    ];
+    var ENGLISH_PASSAGES = [
+      'Good morning. I would like to give a quick update on our project.',
+      'The report is almost done. I will send it to you by tomorrow.',
+      'Thank you for your help. Please let me know if you have any questions.',
+      'Today the weather is sunny and warm. It is a good day for a walk.',
+      'I am sorry for the delay. I will finish the task as soon as possible.',
+      'Could you please check this file when you have time? There is no rush.'
+    ];
+    var TEXT_POOLS = [
+      { tag:'쉬어가기', title:'쉬어갈 시간이에요', items:BREAK_RESTS, cls:'' },
+      { tag:'국어 연습', title:'소리 내어 읽어보세요', items:KOREAN_PASSAGES, cls:'' },
+      { tag:'English Practice', title:'Read this out loud', items:ENGLISH_PASSAGES, cls:'lang-en' }
+    ];
     var backEl = document.getElementById('breakBack');
+    var tagEl = document.getElementById('breakTag');
+    var titleEl = document.getElementById('breakTitle');
     var msgEl = document.getElementById('breakMsg');
+    var photoEl = document.getElementById('breakPhoto');
+    var photoBtn = document.getElementById('breakPhotoBtn');
     var lastShownKey = null;
     var autoCloseTimer = null;
+    var photoFiles = [];
+
+    function refreshPhotos(){
+      if(!(window.api && window.api.listPhotos)) return;
+      window.api.listPhotos().then(function(res){ photoFiles = (res && res.files) || []; });
+    }
+    refreshPhotos();
+    if(photoBtn && window.api && window.api.selectPhotoFolder){
+      photoBtn.addEventListener('click', function(){
+        window.api.selectPhotoFolder().then(function(folder){ if(folder) refreshPhotos(); });
+      });
+    } else if(photoBtn){
+      photoBtn.hidden = true;
+    }
+
+    function currentPools(){
+      var pools = TEXT_POOLS.slice();
+      if(photoFiles.length) pools.push({ tag:'사진', title:'잠깐 보고 가세요', items:photoFiles, cls:'', photo:true });
+      return pools;
+    }
 
     function closeBreak(){
       backEl.classList.remove('open');
       clearTimeout(autoCloseTimer);
     }
     function showBreak(){
-      msgEl.textContent = BREAK_MESSAGES[Math.floor(Math.random() * BREAK_MESSAGES.length)];
+      var pools = currentPools();
+      var pool = pools[Math.floor(Math.random() * pools.length)];
+      var item = pool.items[Math.floor(Math.random() * pool.items.length)];
+      tagEl.textContent = pool.tag;
+      titleEl.textContent = pool.title;
+      if(pool.photo){
+        photoEl.src = item;
+        photoEl.style.display = 'block';
+        msgEl.style.display = 'none';
+      } else {
+        msgEl.textContent = item;
+        msgEl.className = 'break-msg' + (pool.cls ? ' ' + pool.cls : '');
+        msgEl.style.display = 'block';
+        photoEl.style.display = 'none';
+        photoEl.src = '';
+      }
       backEl.classList.add('open');
       clearTimeout(autoCloseTimer);
       autoCloseTimer = setTimeout(closeBreak, 60000);
