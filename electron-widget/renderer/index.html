@@ -9,41 +9,41 @@
     --ui: 'Malgun Gothic', '맑은 고딕', 'Segoe UI', system-ui, sans-serif;
     --mono: 'Consolas', 'Cascadia Mono', 'Segoe UI', var(--ui);
 
-    --ink:#25332B;
-    --ink-soft:#5A7268;
-    --ink-faint:#8CA89A;
-    --paper:#EDF6F0;
-    --cell:#FAFDFB;
-    --cell-alt:#EDF6F1;
-    --grid:#DBEDE2;
-    --grid-strong:#B7D9C5;
-    --accent:#2E9E76;
+    --ink:#1E2C25;
+    --ink-soft:#4A6357;
+    --ink-faint:#7B9688;
+    --paper:#DCEEE1;
+    --cell:#F3FAF6;
+    --cell-alt:#E7F3EC;
+    --grid:#C7E3D3;
+    --grid-strong:#9CC9AE;
+    --accent:#238F67;
     --accent-ink:#F3FBF7;
-    --accent-soft:#D7F0E2;
+    --accent-soft:#C7EAD9;
     --sun:#B06A56;
     --sat:#5C7A96;
     --warn:#B06A56;
     --gold:#A8895A;
-    --shadow: 0 1px 6px rgba(20,60,45,0.08);
+    --shadow: 0 1px 6px rgba(20,60,45,0.12);
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
-      --ink:#DCEAE2; --ink-soft:#8FAB9C; --ink-faint:#5D7869;
-      --paper:#141C18; --cell:#1C2620; --cell-alt:#212C25;
-      --grid:#2D3A32; --grid-strong:#3E4F44;
-      --accent:#4FC79A; --accent-ink:#0E1712; --accent-soft:#25392F;
+      --ink:#E4F0E8; --ink-soft:#9BBBAB; --ink-faint:#5D7869;
+      --paper:#0E1512; --cell:#1A2420; --cell-alt:#1F2B25;
+      --grid:#324339; --grid-strong:#48604F;
+      --accent:#3FCE9A; --accent-ink:#0A1310; --accent-soft:#22392E;
       --sun:#D98F76; --sat:#7B98B2; --warn:#D98F76; --gold:#C7AC7E;
-      --shadow: 0 1px 8px rgba(0,0,0,0.35);
+      --shadow: 0 1px 8px rgba(0,0,0,0.4);
     }
   }
   :root[data-theme="dark"]{
-    --ink:#DCEAE2; --ink-soft:#8FAB9C; --ink-faint:#5D7869;
-    --paper:#141C18; --cell:#1C2620; --cell-alt:#212C25;
-    --grid:#2D3A32; --grid-strong:#3E4F44;
-    --accent:#4FC79A; --accent-ink:#0E1712; --accent-soft:#25392F;
+    --ink:#E4F0E8; --ink-soft:#9BBBAB; --ink-faint:#5D7869;
+    --paper:#0E1512; --cell:#1A2420; --cell-alt:#1F2B25;
+    --grid:#324339; --grid-strong:#48604F;
+    --accent:#3FCE9A; --accent-ink:#0A1310; --accent-soft:#22392E;
     --sun:#D98F76; --sat:#7B98B2; --warn:#D98F76; --gold:#C7AC7E;
-    --shadow: 0 1px 8px rgba(0,0,0,0.35);
+    --shadow: 0 1px 8px rgba(0,0,0,0.4);
   }
 
   *{ box-sizing:border-box; }
@@ -68,6 +68,7 @@
     height:100vh; overflow:hidden;
     display:flex; flex-direction:column;
     background:var(--paper);
+    border-radius:22px;
   }
 
   /* ---------- header: a real card so it stays legible over any wallpaper,
@@ -85,9 +86,9 @@
   .clock small{ font-size:0.42em; color:var(--ink-soft); margin-left:4px; font-weight:500;}
   .date-line{ margin-top:6px; font-size:13px; color:var(--ink-soft); }
   .date-line b{ color:var(--ink); font-weight:600; }
-  .greet{ text-align:right; max-width:440px; -webkit-app-region: no-drag; }
+  .greet{ text-align:right; max-width:640px; min-width:0; -webkit-app-region: no-drag; }
   .greet .title{ font-size:15px; margin-bottom:4px; }
-  .greet .sub{ font-size:12px; color:var(--ink-soft); line-height:1.5; font-style:italic; }
+  .greet .sub{ font-size:12px; color:var(--ink-soft); line-height:1.5; font-style:italic; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .greet .sub b{ font-style:normal; color:var(--ink); font-weight:600; }
 
   /* ---------- d-day strip, inside the header ---------- */
@@ -1484,7 +1485,16 @@
     var board = document.getElementById('board');
     var editBtn = document.getElementById('editBtn');
     var PANEL_IDS = ['panel-cal','panel-todo','panel-event','panel-memo'];
+    // bump this whenever the grid areas are restructured, so positions saved
+    // against an older layout (which would now land in the wrong spot, or
+    // overlap another panel and look "missing") reset to the new defaults
+    var LAYOUT_VERSION = 2;
     var layout = load('griddesk.layout', {});
+    if(load('griddesk.layoutVersion', 0) !== LAYOUT_VERSION){
+      layout = {};
+      save('griddesk.layout', layout);
+      save('griddesk.layoutVersion', LAYOUT_VERSION);
+    }
     var editing = false;
 
     function applySaved(){
