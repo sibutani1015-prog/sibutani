@@ -260,10 +260,16 @@
   .sched-group-head .bar i{ display:block; height:100%; background:var(--accent); border-radius:6px; }
   .sched-group-head .pct{ font-size:11px; color:var(--ink-soft); font-family:var(--mono); flex:none; width:34px; text-align:right; }
 
-  /* ---------- memo ---------- */
   textarea{ width:100%; min-height:80px; resize:vertical; border:1px solid var(--grid); border-radius:13px; background:var(--cell-alt); padding:8px 10px; font-size:13px; line-height:1.6; font-family:var(--ui); }
-  .save-flag{ display:block; text-align:right; font-size:11px; color:var(--ink-faint); margin-top:6px; height:14px; }
-  .save-flag.show{ color:var(--accent); }
+
+  /* ---------- memo (낱개 항목: 전달할 것 · 잊으면 안 되는 것 · 나중에 중요해질 수 있는 것) ---------- */
+  li.memo .txt{ flex:1; min-width:0; overflow-wrap:break-word; }
+  li.memo .to-sched{
+    flex:none; border:1px solid var(--grid-strong); background:var(--accent-soft); color:var(--accent);
+    border-radius:9px; font-size:11px; font-weight:600; padding:3px 8px; opacity:0; transition:opacity .15s;
+  }
+  ul.rows li:hover .to-sched{ opacity:1; }
+  li.memo .to-sched:hover{ background:var(--accent); color:var(--accent-ink); }
 
   /* ---------- materials ---------- */
   li.material a.mtitle{ color:var(--accent); font-weight:600; text-decoration:none; display:flex; align-items:center; gap:5px; }
@@ -479,11 +485,14 @@
     <section class="panel ga-memo" id="panel-memo">
       <div class="panel-head">
         <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>메모</h2>
-        <span class="count" id="memoCount">0자</span>
+        <span class="count" id="memoCount">0개</span>
       </div>
       <div class="panel-body">
-        <textarea id="memoBox" placeholder="생각나는 대로 적어두는 칸이에요..."></textarea>
-        <span class="save-flag" id="saveFlag">저장됨</span>
+        <div class="add-row">
+          <input type="text" id="memoTitle" placeholder="전달할 것, 잊으면 안 되는 것을 적고 Enter" maxlength="200">
+          <button id="memoAdd">추가</button>
+        </div>
+        <ul class="rows" id="memoList"></ul>
       </div>
     </section>
 
@@ -947,22 +956,56 @@
   renderSched();
   renderCal();
 
-  /* ---------- memo ---------- */
-  var memoBox = document.getElementById('memoBox');
-  memoBox.value = load('griddesk.memo', '오늘 처리할 일:\n\n');
-  function updateMemoCount(){ document.getElementById('memoCount').textContent = memoBox.value.length + '자'; }
-  updateMemoCount();
-  var memoTimer;
-  memoBox.addEventListener('input', function(){
-    updateMemoCount();
-    clearTimeout(memoTimer);
-    memoTimer = setTimeout(function(){
-      save('griddesk.memo', memoBox.value);
-      var flag = document.getElementById('saveFlag');
-      flag.classList.add('show');
-      setTimeout(function(){ flag.classList.remove('show'); }, 1200);
-    }, 500);
-  });
+  /* ---------- memo (전달할 것 · 잊으면 안 되는 것 · 나중에 중요해질 수 있는 것: 낱개 항목) ---------- */
+  function defaultMemos(){ return [ {id:1, text:'생각나는 대로 여기 적어두세요'} ]; }
+  var memos = load('griddesk.memos', defaultMemos());
+  var memoNextId = load('griddesk.memos.nextId', 2);
+
+  function renderMemos(){
+    var ul = document.getElementById('memoList');
+    ul.innerHTML = '';
+    if(memos.length === 0){
+      var hint = document.createElement('li'); hint.className = 'empty-hint'; hint.textContent = '적어둔 메모가 없어요.';
+      ul.appendChild(hint);
+    }
+    memos.forEach(function(item){
+      var li = document.createElement('li'); li.className = 'memo';
+      var txt = document.createElement('span'); txt.className = 'txt'; txt.textContent = item.text;
+      var toSched = document.createElement('button'); toSched.className = 'to-sched'; toSched.type = 'button';
+      toSched.textContent = '→ 일정'; toSched.title = '중요해졌으면 일정·할일로 보내기';
+      toSched.addEventListener('click', function(){
+        schedule.push({id: schedNextId++, title:item.text, date:todayIso(), project:'개인', priority:'중간', progress:0, repeat:'none'});
+        save('griddesk.schedule', schedule); save('griddesk.schedule.nextId', schedNextId);
+        renderSched(); renderCal();
+        memos = memos.filter(function(m){ return m.id !== item.id; });
+        save('griddesk.memos', memos);
+        renderMemos();
+        flashPanel('panel-sched');
+      });
+      var del = document.createElement('button'); del.className = 'del'; del.setAttribute('aria-label','삭제'); del.textContent = '×';
+      del.addEventListener('click', function(){
+        memos = memos.filter(function(m){ return m.id !== item.id; });
+        save('griddesk.memos', memos);
+        renderMemos();
+      });
+      li.appendChild(txt); li.appendChild(toSched); li.appendChild(del);
+      ul.appendChild(li);
+    });
+    document.getElementById('memoCount').textContent = memos.length + '개';
+  }
+
+  function addMemo(){
+    var input = document.getElementById('memoTitle');
+    var text = input.value.trim();
+    if(!text) return;
+    memos.push({id: memoNextId++, text:text});
+    save('griddesk.memos', memos); save('griddesk.memos.nextId', memoNextId);
+    input.value = '';
+    renderMemos();
+  }
+  document.getElementById('memoAdd').addEventListener('click', addMemo);
+  document.getElementById('memoTitle').addEventListener('keydown', function(e){ if(e.key === 'Enter') addMemo(); });
+  renderMemos();
 
   /* ---------- materials (자료함, up to 8 pinned to the dock as favorites) ---------- */
   var MAX_PINS = 8;
@@ -1167,7 +1210,7 @@
       el.scrollIntoView({behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'center'});
       flashPanel(id);
       if(id === 'panel-sched') document.getElementById('schedTitle').focus({preventScroll:true});
-      if(id === 'panel-memo') memoBox.focus({preventScroll:true});
+      if(id === 'panel-memo') document.getElementById('memoTitle').focus({preventScroll:true});
       if(id === 'panel-material') document.getElementById('materialTitle').focus({preventScroll:true});
       if(id === 'panel-contact') document.getElementById('contactName').focus({preventScroll:true});
       if(id === 'panel-ai') document.getElementById('quickInput').focus({preventScroll:true});
@@ -1310,7 +1353,7 @@
     return {
       exportedAt: new Date().toISOString(),
       schedule: schedule,
-      memo: memoBox.value,
+      memos: memos,
       materials: materials,
       contacts: contacts,
       ddays: ddays,
@@ -1344,14 +1387,14 @@
       if(!confirm('불러오면 지금 이 컴퓨터에 있는 기록을 덮어써요. 계속할까요?')){ e.target.value=''; return; }
 
       if(Array.isArray(data.schedule)){ schedule = data.schedule; schedNextId = maxId(schedule); save('griddesk.schedule', schedule); save('griddesk.schedule.nextId', schedNextId); }
-      if(typeof data.memo === 'string'){ memoBox.value = data.memo; save('griddesk.memo', data.memo); updateMemoCount(); }
+      if(Array.isArray(data.memos)){ memos = data.memos; memoNextId = maxId(memos); save('griddesk.memos', memos); save('griddesk.memos.nextId', memoNextId); }
       if(Array.isArray(data.materials)){ materials = data.materials; materialNextId = maxId(materials); save('griddesk.materials', materials); save('griddesk.materials.nextId', materialNextId); }
       if(Array.isArray(data.contacts)){ contacts = data.contacts; contactNextId = maxId(contacts); save('griddesk.contacts', contacts); save('griddesk.contacts.nextId', contactNextId); }
       if(Array.isArray(data.ddays)){ ddays = data.ddays; save('griddesk.ddays', ddays); }
       if(typeof data.msgTemplate === 'string'){ msgBox.value = data.msgTemplate; save('griddesk.msgTemplate', data.msgTemplate); }
 
       selectedDate = null;
-      renderSched(); renderCal(); renderMaterials(); renderContacts(); renderDdays();
+      renderSched(); renderCal(); renderMemos(); renderMaterials(); renderContacts(); renderDdays();
       e.target.value = '';
       alert('불러왔어요.');
     };
@@ -1360,7 +1403,7 @@
 
   document.getElementById('wipeBtn').addEventListener('click', function(){
     if(!confirm('이 컴퓨터에 저장된 일정·메모·자료함·연락처·D-Day를 전부 지울까요?\n되돌릴 수 없어요 — 전체 내보내기를 먼저 하셨는지 확인하세요.')) return;
-    var keys = ['griddesk.schedule','griddesk.schedule.nextId','griddesk.memo','griddesk.materials','griddesk.materials.nextId','griddesk.contacts','griddesk.contacts.nextId','griddesk.msgTemplate','griddesk.ddays'];
+    var keys = ['griddesk.schedule','griddesk.schedule.nextId','griddesk.memos','griddesk.memos.nextId','griddesk.materials','griddesk.materials.nextId','griddesk.contacts','griddesk.contacts.nextId','griddesk.msgTemplate','griddesk.ddays'];
     keys.forEach(function(k){ remove(k); });
     location.reload();
   });
@@ -1489,9 +1532,9 @@
         save('griddesk.contacts', contacts); save('griddesk.contacts.nextId', contactNextId);
         renderContacts(); flashPanel('panel-contact');
       } else {
-        var sep = memoBox.value && !/\n$/.test(memoBox.value) ? '\n' : '';
-        memoBox.value = memoBox.value + sep + '- ' + p.text;
-        save('griddesk.memo', memoBox.value); updateMemoCount(); flashPanel('panel-memo');
+        memos.push({id: memoNextId++, text:p.text});
+        save('griddesk.memos', memos); save('griddesk.memos.nextId', memoNextId);
+        renderMemos(); flashPanel('panel-memo');
       }
       quickInput.value = ''; quickPreview.hidden = true; pending = null;
     }
