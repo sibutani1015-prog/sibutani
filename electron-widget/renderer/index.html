@@ -424,7 +424,20 @@
   .modal button.danger{ background:var(--warn); border-color:var(--warn); color:#fff; }
   .modal button.ghost{ background:var(--cell-alt); color:var(--ink-soft); }
 
-  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; scroll-behavior:auto !important; } }
+  /* ---------- 매시 50분 휴식 알림 ---------- */
+  .break-modal{ text-align:center; }
+  .break-spin{
+    width:56px; height:56px; margin:0 auto 12px; padding:12px;
+    border-radius:50%; background:var(--accent-soft); color:var(--accent);
+    animation:break-spin 2.2s linear infinite;
+  }
+  .break-spin svg{ width:100%; height:100%; stroke:currentColor; }
+  @keyframes break-spin{ to{ transform:rotate(360deg); } }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; scroll-behavior:auto !important; }
+    .break-spin{ animation:none; }
+  }
 </style>
 </head>
 <body>
@@ -691,6 +704,17 @@
   </div>
 </div>
 
+<div class="modal-back" id="breakBack">
+  <div class="modal break-modal">
+    <div class="break-spin">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3.5-7.1"/><path d="M21 3v6h-6"/></svg>
+    </div>
+    <h3 class="serif">쉬어갈 시간이에요</h3>
+    <p id="breakMsg">눈을 잠깐 감고 먼 곳을 바라보세요.</p>
+    <button id="breakClose">확인</button>
+  </div>
+</div>
+
 <script>
 (function(){
   "use strict";
@@ -734,6 +758,45 @@
   tickClock();
   setInterval(paintClock, 1000);
   setInterval(tickClock, 60000);
+
+  /* ---------- 매시 50분 휴식 알림 (API 호출 없음, 그냥 시계 확인) ---------- */
+  (function(){
+    var BREAK_MESSAGES = [
+      '눈을 잠깐 감고 먼 곳을 바라보세요.',
+      '물 한 잔 마시고 기지개를 켜볼까요?',
+      '어깨를 좌우로 가볍게 돌려보세요.',
+      '창밖을 잠깐 바라보며 숨을 크게 쉬어보세요.',
+      '자리에서 일어나 잠깐 걸어볼까요?'
+    ];
+    var backEl = document.getElementById('breakBack');
+    var msgEl = document.getElementById('breakMsg');
+    var lastShownKey = null;
+    var autoCloseTimer = null;
+
+    function closeBreak(){
+      backEl.classList.remove('open');
+      clearTimeout(autoCloseTimer);
+    }
+    function showBreak(){
+      msgEl.textContent = BREAK_MESSAGES[Math.floor(Math.random() * BREAK_MESSAGES.length)];
+      backEl.classList.add('open');
+      clearTimeout(autoCloseTimer);
+      autoCloseTimer = setTimeout(closeBreak, 60000);
+    }
+    document.getElementById('breakClose').addEventListener('click', closeBreak);
+    backEl.addEventListener('click', function(e){ if(e.target === backEl) closeBreak(); });
+
+    function checkBreakTime(){
+      var now = new Date();
+      if(now.getMinutes() !== 50) return;
+      var key = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate() + '-' + now.getHours();
+      if(lastShownKey === key) return;
+      lastShownKey = key;
+      showBreak();
+    }
+    checkBreakTime();
+    setInterval(checkBreakTime, 20000);
+  })();
 
   /* ---------- a quote of the day (Nietzsche / Goethe), stable per calendar day ---------- */
   (function(){
