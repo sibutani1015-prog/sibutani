@@ -47,6 +47,9 @@
   }
 
   *{ box-sizing:border-box; }
+  /* an element's own display:flex/grid/etc rule otherwise wins over the
+     hidden attribute (they have equal specificity); force hidden to win */
+  [hidden]{ display:none !important; }
   html, body{ background:transparent; }
   body{
     margin:0; color:var(--ink);
@@ -282,8 +285,8 @@
 
   .dock-pins{ display:flex; gap:2px; }
   .dock button.pin .letter{
-    width:18px; height:18px; border-radius:50%; background:var(--accent); color:var(--accent-ink);
-    display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;
+    width:22px; height:22px; border-radius:50%; background:var(--accent); color:var(--accent-ink);
+    display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;
     font-family:var(--mono);
   }
 
@@ -363,14 +366,14 @@
   .qc-actions .save{ background:var(--accent); color:var(--accent-ink); }
   .qc-actions .cancel{ background:var(--cell-alt); color:var(--ink-soft); }
 
-  /* ---------- dock (about 80% of its old size) ---------- */
+  /* ---------- dock ---------- */
   .dock-wrap{ position:fixed; left:0; width:80%; bottom:12px; display:flex; justify-content:center; pointer-events:none; z-index:10; }
-  .dock{ pointer-events:auto; display:flex; gap:2px; padding:5px; background:color-mix(in srgb, var(--cell) 88%, transparent); backdrop-filter:blur(10px); border:1px solid var(--grid); border-radius:18px; box-shadow:0 8px 24px rgba(0,0,0,0.14); width:50%; justify-content:center; overflow-x:auto; }
-  .dock button{ position:relative; flex:none; width:34px; height:34px; display:flex; align-items:center; justify-content:center; background:none; border:none; border-radius:13px; color:var(--ink-soft); }
-  .dock button svg{ width:15px; height:15px; stroke:currentColor; }
-  .dock button:hover, .dock button:focus-visible{ color:var(--accent); background:var(--accent-soft); outline:none; }
+  .dock{ pointer-events:auto; display:flex; gap:2px; padding:6px; background:var(--accent-soft); backdrop-filter:blur(10px); border:1px solid var(--grid-strong); border-radius:20px; box-shadow:0 8px 24px rgba(0,0,0,0.18); width:56%; justify-content:center; overflow-x:auto; }
+  .dock button{ position:relative; flex:none; width:44px; height:44px; display:flex; align-items:center; justify-content:center; background:none; border:none; border-radius:14px; color:var(--ink-soft); }
+  .dock button svg{ width:19px; height:19px; stroke:currentColor; }
+  .dock button:hover, .dock button:focus-visible{ color:var(--accent); background:var(--cell); outline:none; }
   .dock button#editBtn.active{ color:var(--accent-ink); background:var(--accent); }
-  .dock button .tip{ position:absolute; bottom:42px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--paper); border-radius:9px; font-size:11px; padding:3px 7px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .12s; }
+  .dock button .tip{ position:absolute; bottom:52px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--paper); border-radius:9px; font-size:11px; padding:3px 7px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .12s; }
   .dock button:hover .tip, .dock button:focus-visible .tip{ opacity:1; }
   .dock .sep{ width:1px; background:var(--grid); margin:5px 2px; flex:none; }
 
@@ -384,8 +387,9 @@
     width:min(380px, 90vw); max-height:58vh;
     background:var(--cell); border:1px solid var(--grid-strong); border-radius:18px;
     box-shadow:0 20px 40px rgba(0,0,0,0.25);
-    display:flex; flex-direction:column; overflow:hidden; z-index:16;
+    display:none; flex-direction:column; overflow:hidden; z-index:16;
   }
+  .popover.open{ display:flex; }
   .popover .panel-body{ overflow:auto; }
   .popover-close{
     flex:none; border:none; background:none; color:var(--ink-faint); font-size:19px; line-height:1;
@@ -545,7 +549,7 @@
 
 <div class="popover-back" id="popoverBack"></div>
 
-<div class="popover" id="popover-material" hidden>
+<div class="popover" id="popover-material">
   <div class="panel-head">
     <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8V7a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4"/><path d="M13 17l6-6M13 17h5v-5"/></svg>자료함</h2>
     <span class="count" id="materialCount">0개</span>
@@ -561,7 +565,7 @@
   </div>
 </div>
 
-<div class="popover" id="popover-contact" hidden>
+<div class="popover" id="popover-contact">
   <div class="panel-head">
     <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg>메시지 발송</h2>
     <span class="count" id="contactCount">0명</span>
@@ -675,7 +679,7 @@
     if(!window.api) return;
     document.addEventListener('mousemove', function(e){
       var el = document.elementFromPoint(e.clientX, e.clientY);
-      var interactive = el && el.closest('.panel, .dock, .modal-back.open, .head, .popover, .popover-back.open');
+      var interactive = el && el.closest('.panel, .dock, .modal-back.open, .head, .popover.open, .popover-back.open');
       window.api.setIgnoreMouseEvents(!interactive);
     });
   })();
@@ -1222,14 +1226,14 @@
   var popoverBack = document.getElementById('popoverBack');
   var popovers = { 'panel-material': document.getElementById('popover-material'), 'panel-contact': document.getElementById('popover-contact') };
   function closeAllPopovers(){
-    Object.keys(popovers).forEach(function(k){ popovers[k].hidden = true; });
+    Object.keys(popovers).forEach(function(k){ popovers[k].classList.remove('open'); });
     popoverBack.classList.remove('open');
   }
   function togglePopover(id){
     var el = popovers[id];
-    var wasOpen = !el.hidden;
+    var wasOpen = el.classList.contains('open');
     closeAllPopovers();
-    if(!wasOpen){ el.hidden = false; popoverBack.classList.add('open'); }
+    if(!wasOpen){ el.classList.add('open'); popoverBack.classList.add('open'); }
     return !wasOpen;
   }
   popoverBack.addEventListener('click', closeAllPopovers);
