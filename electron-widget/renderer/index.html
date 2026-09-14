@@ -188,12 +188,13 @@
 
   /* ---------- shared form controls ---------- */
   .add-row{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
-  .add-row input[type=text], .add-row input[type=date], .add-row select{
+  .add-row input[type=text], .add-row input[type=date], .add-row input[type=time], .add-row select{
     border:1px solid var(--grid); background:var(--cell-alt); border-radius:12px;
     padding:8px 9px; font-size:13px;
   }
   .add-row input[type=text]{ flex:1 1 110px; min-width:0; }
   .add-row input[type=date]{ flex:0 0 132px; font-family:var(--mono); font-size:12px; }
+  .add-row input[type=time]{ flex:0 0 92px; font-family:var(--mono); font-size:12px; }
   .add-row select{ flex:0 0 76px; }
   .add-row input:focus, textarea:focus, select:focus{ outline:none; border-color:var(--accent); }
   .add-row > button{
@@ -235,6 +236,9 @@
 
   /* ---------- schedule filter ---------- */
   .sched-filter{ display:flex; align-items:center; justify-content:space-between; background:var(--accent-soft); border-radius:12px; padding:6px 10px; margin-bottom:10px; font-size:12px; color:var(--accent); }
+  .sched-section + .sched-section{ margin-top:16px; }
+  .sched-subhead{ margin:0 0 8px; font-family:var(--ui); font-size:12px; font-weight:700; color:var(--ink-soft); }
+  #schedEvents li .pr{ background:var(--sat); }
   .sched-filter button{ border:none; background:none; color:var(--accent); font-weight:600; text-decoration:underline; font-size:12px; }
 
   /* ---------- schedule rows ---------- */
@@ -491,12 +495,20 @@
           <input type="text" id="schedProject" list="projectList" placeholder="사업명" maxlength="30" style="flex:1 1 90px;">
           <datalist id="projectList"></datalist>
           <input type="date" id="schedDate">
+          <input type="time" id="schedTime" title="시간을 적으면 일정으로, 비워두면 할일로 들어가요">
           <select id="schedPriority"><option>높음</option><option selected>중간</option><option>낮음</option></select>
           <select id="schedRepeat"><option value="none">반복없음</option><option value="weekly">매주</option><option value="monthly">매월</option></select>
           <button id="schedAdd">추가</button>
         </div>
-        <div id="schedGroups"></div>
-        <ul class="rows" id="schedList"></ul>
+        <div class="sched-section" id="schedEventsWrap" hidden>
+          <h3 class="sched-subhead">일정</h3>
+          <ul class="rows" id="schedEvents"></ul>
+        </div>
+        <div class="sched-section" id="schedTodosWrap">
+          <h3 class="sched-subhead">할일</h3>
+          <div id="schedGroups"></div>
+          <ul class="rows" id="schedList"></ul>
+        </div>
       </div>
     </section>
 
@@ -749,7 +761,7 @@
       {id:2, title:'우유 사기', date:isoOf(t), project:'개인', priority:'낮음', progress:0, repeat:'none'},
       {id:3, title:'예산안 검토', date:isoOf(t), project:'2026년 역량강화사업', priority:'높음', progress:50, repeat:'none'},
       {id:4, title:'추진계획 초안 작성', date:isoOf(tm), project:'2026년 역량강화사업', priority:'중간', progress:25, repeat:'none'},
-      {id:5, title:'주간 회의', date:isoOf(tm), project:'개인', priority:'중간', progress:0, repeat:'weekly'}
+      {id:5, title:'주간 회의', date:isoOf(tm), time:'10:00', project:'개인', priority:'중간', progress:0, repeat:'weekly'}
     ];
   }
   var schedule = load('griddesk.schedule', defaultSchedule());
@@ -783,26 +795,29 @@
   }
 
   function renderSchedProgress(){
-    var plain = schedule.filter(function(s){ return s.repeat === 'none' || !s.repeat; });
+    var plain = schedule.filter(function(s){ return (s.repeat === 'none' || !s.repeat) && !isEvent(s); });
     var total = plain.length;
     var avg = total ? Math.round(plain.reduce(function(sum,s){ return sum + (s.progress||0); }, 0) / total) : 0;
     document.getElementById('schedBar').style.width = avg + '%';
     document.getElementById('schedPct').textContent = '평균 ' + avg + '% (' + total + '건)';
   }
 
+  function isEvent(item){ return !!item.time; }
+
   function buildSchedRow(item, matchedIso){
     var li = document.createElement('li');
     var isPlain = (item.repeat === 'none' || !item.repeat);
-    li.className = 'sched' + (isPlain && item.progress === 100 ? ' done' : '');
+    var event = isEvent(item);
+    li.className = 'sched' + (isPlain && !event && item.progress === 100 ? ' done' : '');
     li.dataset.priority = item.priority;
-    if(isPlain) li.dataset.progress = String(item.progress || 0);
+    if(isPlain && !event) li.dataset.progress = String(item.progress || 0);
 
     var pr = document.createElement('span'); pr.className = 'pr';
     var body = document.createElement('span'); body.className = 'body';
     var txt = document.createElement('span'); txt.className = 'txt'; txt.textContent = item.title;
     var meta = document.createElement('span'); meta.className = 'meta';
     var d = new Date((matchedIso || item.date) + 'T00:00:00');
-    meta.textContent = (item.project || '개인') + ' · ' + (d.getMonth()+1) + '.' + pad(d.getDate()) + '(' + WD[d.getDay()] + ')';
+    meta.textContent = (event ? item.time + ' · ' : '') + (item.project || '개인') + ' · ' + (d.getMonth()+1) + '.' + pad(d.getDate()) + '(' + WD[d.getDay()] + ')';
     if(item.repeat && item.repeat !== 'none'){
       var rep = document.createElement('span'); rep.className = 'rep'; rep.textContent = REPEAT_LABEL[item.repeat];
       meta.appendChild(rep);
@@ -810,7 +825,7 @@
     body.appendChild(txt); body.appendChild(meta);
     li.appendChild(pr); li.appendChild(body);
 
-    if(isPlain){
+    if(isPlain && !event){
       var pill = document.createElement('button');
       pill.className = 'progress-pill';
       pill.textContent = (item.progress || 0) + '%';
@@ -834,11 +849,16 @@
     return li;
   }
 
+  function eventSortKey(item){ return item.date + ' ' + (item.time || '99:99'); }
+
   function renderSched(){
     var flatUl = document.getElementById('schedList');
     var groupsWrap = document.getElementById('schedGroups');
+    var eventsWrap = document.getElementById('schedEventsWrap');
+    var eventsUl = document.getElementById('schedEvents');
     flatUl.innerHTML = '';
     groupsWrap.innerHTML = '';
+    eventsUl.innerHTML = '';
 
     var dl = document.getElementById('projectList');
     dl.innerHTML = '';
@@ -849,21 +869,33 @@
     if(selectedDate){
       groupsWrap.hidden = true; flatUl.hidden = false;
       var list = schedule.filter(function(s){ return occursOn(s, selectedDate); });
-      if(list.length === 0){
+      var dayEvents = list.filter(isEvent).sort(function(a,b){ return eventSortKey(a) < eventSortKey(b) ? -1 : 1; });
+      var dayTodos = list.filter(function(s){ return !isEvent(s); });
+
+      eventsWrap.hidden = dayEvents.length === 0;
+      dayEvents.forEach(function(item){ eventsUl.appendChild(buildSchedRow(item, selectedDate)); });
+
+      if(dayTodos.length === 0){
         var hint = document.createElement('li');
         hint.className = 'empty-hint';
-        hint.textContent = '이 날짜에는 등록된 항목이 없어요.';
+        hint.textContent = dayEvents.length ? '이 날짜에 등록된 할일은 없어요.' : '이 날짜에는 등록된 항목이 없어요.';
         flatUl.appendChild(hint);
       }
-      list.forEach(function(item){ flatUl.appendChild(buildSchedRow(item, selectedDate)); });
+      dayTodos.forEach(function(item){ flatUl.appendChild(buildSchedRow(item, selectedDate)); });
     } else {
       flatUl.hidden = true; groupsWrap.hidden = false;
-      if(schedule.length === 0){
-        groupsWrap.innerHTML = '<p class="empty-hint">등록된 일정·할일이 없어요.</p>';
+
+      var allEvents = schedule.filter(isEvent).sort(function(a,b){ return eventSortKey(a) < eventSortKey(b) ? -1 : 1; });
+      eventsWrap.hidden = allEvents.length === 0;
+      allEvents.forEach(function(item){ eventsUl.appendChild(buildSchedRow(item)); });
+
+      var todosOnly = schedule.filter(function(s){ return !isEvent(s); });
+      if(todosOnly.length === 0){
+        groupsWrap.innerHTML = '<p class="empty-hint">등록된 할일이 없어요.</p>';
       } else {
         var order = [];
         var byProject = {};
-        schedule.slice().sort(function(a,b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }).forEach(function(item){
+        todosOnly.slice().sort(function(a,b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }).forEach(function(item){
           var p = item.project || '개인';
           if(!byProject[p]){ byProject[p] = []; order.push(p); }
           byProject[p].push(item);
@@ -900,12 +932,14 @@
     if(!title) return;
     var project = projectInput.value.trim() || '개인';
     var date = document.getElementById('schedDate').value || todayIso();
+    var timeInput = document.getElementById('schedTime');
+    var time = timeInput.value;
     var priority = document.getElementById('schedPriority').value;
     var repeat = document.getElementById('schedRepeat').value;
-    schedule.push({id: schedNextId++, title:title, date:date, project:project, priority:priority, progress:0, repeat:repeat});
+    schedule.push({id: schedNextId++, title:title, date:date, time:time, project:project, priority:priority, progress:0, repeat:repeat});
     save('griddesk.schedule', schedule);
     save('griddesk.schedule.nextId', schedNextId);
-    titleInput.value = ''; projectInput.value = '';
+    titleInput.value = ''; projectInput.value = ''; timeInput.value = '';
     renderSched(); renderCal();
   }
   document.getElementById('schedAdd').addEventListener('click', addSched);
