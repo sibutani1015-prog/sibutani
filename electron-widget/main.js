@@ -56,6 +56,7 @@ function createWindow() {
   });
 
   mainWindow.setMenuBarVisibility(false);
+  mainWindow.setAlwaysOnTop(!!storeCache.__alwaysOnTop);
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 
   // Start in click-through mode: mouse events pass to whatever is under
@@ -108,6 +109,16 @@ function buildTrayMenu() {
     { label: '앞으로 보기 (Ctrl+Alt+D)', click: bringToFront },
     { type: 'separator' },
     { label: '모니터 선택', submenu: monitorItems },
+    {
+      label: '항상 맨 위 고정',
+      type: 'checkbox',
+      checked: !!storeCache.__alwaysOnTop,
+      click: (item) => {
+        storeCache.__alwaysOnTop = item.checked;
+        writeStore(storeCache);
+        if (mainWindow) mainWindow.setAlwaysOnTop(item.checked);
+      }
+    },
     {
       label: '윈도우 시작 시 자동 실행',
       type: 'checkbox',
