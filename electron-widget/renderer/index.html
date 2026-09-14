@@ -239,6 +239,11 @@
   table.cal td .dots{ display:flex; gap:2px; margin-top:3px; padding-left:1px; }
   table.cal td .dots i{ width:5px; height:5px; border-radius:50%; display:block; }
 
+  /* ---------- 달력에서 바로 일정 추가 ---------- */
+  .cal-add{ margin-top:12px; padding-top:10px; border-top:1px solid var(--grid); }
+  .cal-add label{ display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:8px; }
+  .cal-add .add-row{ margin-bottom:0; }
+
   /* ---------- schedule filter ---------- */
   .sched-filter{ display:flex; align-items:center; justify-content:space-between; background:var(--accent-soft); border-radius:12px; padding:6px 10px; margin-bottom:10px; font-size:12px; color:var(--accent); }
   #schedEvents li .pr{ background:var(--sat); }
@@ -363,6 +368,7 @@
   .qc-row button:disabled{ opacity:0.5; }
   .qc-preview{ margin-top:10px; background:var(--cell); border-radius:12px; padding:10px 12px; border-left:4px solid var(--ink-faint); }
   .qc-preview.k-sched{ border-left-color:var(--accent); }
+  .qc-preview.k-event{ border-left-color:var(--sat); }
   .qc-preview.k-dday{ border-left-color:var(--gold); }
   .qc-preview.k-memo{ border-left-color:var(--ink-soft); }
   .qc-preview.k-contact{ border-left-color:var(--sat); }
@@ -497,6 +503,14 @@
           <thead><tr><th class="sun">일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th class="sat">토</th></tr></thead>
           <tbody id="calBody"></tbody>
         </table>
+        <div class="cal-add">
+          <label id="calAddLabel" for="calEventTitle">오늘에 일정 추가</label>
+          <div class="add-row">
+            <input type="text" id="calEventTitle" placeholder="제목을 입력하고 Enter" maxlength="60">
+            <input type="text" id="calEventTime" placeholder="예: 10시~11시" style="flex:0 0 110px;">
+            <button id="calEventAdd">추가</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -534,12 +548,7 @@
         <span class="count" id="eventCount">0건</span>
       </div>
       <div class="panel-body">
-        <div class="add-row">
-          <input type="text" id="eventTitle" placeholder="제목을 입력하고 Enter" maxlength="60">
-          <input type="date" id="eventDate">
-          <input type="time" id="eventTime">
-          <button id="eventAdd">추가</button>
-        </div>
+        <p class="empty-hint" style="margin:0 0 10px;">일정 등록은 달력에서 날짜를 누르거나 AI 도우미에서 할 수 있어요.</p>
         <ul class="rows" id="schedEvents"></ul>
       </div>
     </section>
@@ -573,7 +582,7 @@
   </div>
   <div class="panel-body">
     <div class="qc-block">
-      <label>한 줄 적으면 <b>할일 · D-Day · 연락처 · 메모</b>로 자동 분류해요.</label>
+      <label>한 줄 적으면 <b>할일 · 일정 · D-Day · 연락처 · 메모</b>로 자동 분류해요. (예: 오후 2시~4시 회의)</label>
       <div class="qc-row">
         <input type="text" id="quickInput" placeholder="예: 내일까지 계약서 검토하기, 9/2 여행 디데이 등록">
         <button id="quickBtn">분류</button>
@@ -736,6 +745,27 @@
   function pad(n){ return String(n).padStart(2,'0'); }
   function isoOf(d){ return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
   function todayIso(){ return isoOf(new Date()); }
+
+  /* 시간 범위 해석: "10시", "10시30분", "14:00", "오후 2시~4시" 같은 표현에서
+     시작(·끝) 시각을 뽑아낸다. 일정(할일과 구분되는 시간 있는 항목)과
+     AI 도우미 분류 양쪽에서 같이 써요. */
+  function to24h(ampm, h){
+    h = +h;
+    if(ampm === '오후' && h < 12) h += 12;
+    if(ampm === '오전' && h === 12) h = 0;
+    return h;
+  }
+  var TIME_RANGE_RE = /(오전|오후)?\s*(\d{1,2})(?:시\s*(\d{1,2})?분?|:(\d{2}))(?:\s*(?:[~\-]|부터)\s*(오전|오후)?\s*(\d{1,2})(?:시\s*(\d{1,2})?분?|:(\d{2}))?(?:까지)?)?/;
+  function parseTimeRangeFromText(text){
+    var m = text.match(TIME_RANGE_RE);
+    if(!m) return null;
+    var start = pad(to24h(m[1], m[2])) + ':' + pad(+(m[3] || m[4] || 0));
+    var end = null;
+    if(m[6]){
+      end = pad(to24h(m[5] || m[1], m[6])) + ':' + pad(+(m[7] || m[8] || 0));
+    }
+    return { start:start, end:end, matchStr:m[0] };
+  }
 
   /* ---------- click-through: pass mouse events to the real desktop over
      empty space, capture them over an actual panel/dock element ---------- */
@@ -910,14 +940,13 @@
       {id:2, title:'우유 사기', date:isoOf(t), project:'개인', priority:'낮음', progress:0, repeat:'none'},
       {id:3, title:'예산안 검토', date:isoOf(t), project:'2026년 역량강화사업', priority:'높음', progress:50, repeat:'none'},
       {id:4, title:'추진계획 초안 작성', date:isoOf(tm), project:'2026년 역량강화사업', priority:'중간', progress:25, repeat:'none'},
-      {id:5, title:'주간 회의', date:isoOf(tm), time:'10:00', project:'개인', priority:'중간', progress:0, repeat:'weekly'}
+      {id:5, title:'주간 회의', date:isoOf(tm), time:'10:00', timeEnd:'11:00', project:'개인', priority:'중간', progress:0, repeat:'weekly'}
     ];
   }
   var schedule = load('griddesk.schedule', defaultSchedule());
   var schedNextId = load('griddesk.schedule.nextId', 6);
   var selectedDate = null;
   document.getElementById('todoDate').value = todayIso();
-  document.getElementById('eventDate').value = todayIso();
   var PROGRESS_STEPS = [0,25,50,75,100];
   var REPEAT_LABEL = {weekly:'매주', monthly:'매월'};
 
@@ -967,7 +996,8 @@
     var txt = document.createElement('span'); txt.className = 'txt'; txt.textContent = item.title;
     var meta = document.createElement('span'); meta.className = 'meta';
     var d = new Date((matchedIso || item.date) + 'T00:00:00');
-    meta.textContent = (event ? item.time + ' · ' : '') + (item.project || '개인') + ' · ' + (d.getMonth()+1) + '.' + pad(d.getDate()) + '(' + WD[d.getDay()] + ')';
+    var timeLabel = event ? (item.time + (item.timeEnd ? '~' + item.timeEnd : '') + ' · ') : '';
+    meta.textContent = timeLabel + (item.project || '개인') + ' · ' + (d.getMonth()+1) + '.' + pad(d.getDate()) + '(' + WD[d.getDay()] + ')';
     if(item.repeat && item.repeat !== 'none'){
       var rep = document.createElement('span'); rep.className = 'rep'; rep.textContent = REPEAT_LABEL[item.repeat];
       meta.appendChild(rep);
@@ -1103,22 +1133,35 @@
   document.getElementById('todoAdd').addEventListener('click', addTodo);
   document.getElementById('todoTitle').addEventListener('keydown', function(e){ if(e.key === 'Enter') addTodo(); });
 
-  function addEvent(){
-    var titleInput = document.getElementById('eventTitle');
+  function renderCalAddLabel(){
+    var label = document.getElementById('calAddLabel');
+    if(!selectedDate || selectedDate === todayIso()){
+      label.textContent = '오늘에 일정 추가';
+    } else {
+      var d = new Date(selectedDate + 'T00:00:00');
+      label.textContent = (d.getMonth()+1) + '월 ' + d.getDate() + '일(' + WD[d.getDay()] + ')에 일정 추가';
+    }
+  }
+  function addCalEvent(){
+    var titleInput = document.getElementById('calEventTitle');
     var title = titleInput.value.trim();
     if(!title) return;
-    var date = document.getElementById('eventDate').value || todayIso();
-    var timeInput = document.getElementById('eventTime');
-    var time = timeInput.value || '09:00';
-    schedule.push({id: schedNextId++, title:title, date:date, time:time, project:'개인', priority:'중간', progress:0, repeat:'none'});
+    var date = selectedDate || todayIso();
+    var timeInput = document.getElementById('calEventTime');
+    var parsed = parseTimeRangeFromText(timeInput.value);
+    var time = parsed ? parsed.start : '09:00';
+    var timeEnd = parsed ? parsed.end : null;
+    schedule.push({id: schedNextId++, title:title, date:date, time:time, timeEnd:timeEnd, project:'개인', priority:'중간', progress:0, repeat:'none'});
     save('griddesk.schedule', schedule);
     save('griddesk.schedule.nextId', schedNextId);
     titleInput.value = ''; timeInput.value = '';
     renderSched(); renderCal();
+    flashPanel('panel-event');
   }
-  document.getElementById('eventAdd').addEventListener('click', addEvent);
-  document.getElementById('eventTitle').addEventListener('keydown', function(e){ if(e.key === 'Enter') addEvent(); });
-  document.getElementById('schedFilterClear').addEventListener('click', function(){ selectedDate = null; renderSched(); renderCal(); });
+  document.getElementById('calEventAdd').addEventListener('click', addCalEvent);
+  document.getElementById('calEventTitle').addEventListener('keydown', function(e){ if(e.key === 'Enter') addCalEvent(); });
+  renderCalAddLabel();
+  document.getElementById('schedFilterClear').addEventListener('click', function(){ selectedDate = null; renderSched(); renderCal(); renderCalAddLabel(); });
   document.getElementById('tidyBtn').addEventListener('click', function(){
     schedule = schedule.filter(function(s){ return !((s.repeat==='none'||!s.repeat) && (s.progress||0) === 100); });
     save('griddesk.schedule', schedule);
@@ -1169,9 +1212,10 @@
             selectedDate = (selectedDate === iso) ? null : iso;
             renderCal(); renderSched();
             document.getElementById('todoDate').value = selectedDate || todayIso();
-            document.getElementById('eventDate').value = selectedDate || todayIso();
+            renderCalAddLabel();
             flashPanel('panel-todo');
             flashPanel('panel-event');
+            document.getElementById('calEventTitle').focus({preventScroll:true});
           };
         })(iso));
         tr.appendChild(td);
@@ -1475,7 +1519,6 @@
       el.scrollIntoView({behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'center'});
       flashPanel(id);
       if(id === 'panel-todo') document.getElementById('todoTitle').focus({preventScroll:true});
-      if(id === 'panel-event') document.getElementById('eventTitle').focus({preventScroll:true});
       if(id === 'panel-memo') document.getElementById('memoTitle').focus({preventScroll:true});
       if(id === 'dday-section') document.getElementById('ddayName').focus({preventScroll:true});
     });
@@ -1745,6 +1788,9 @@
       var titleBase = dateMatch ? text.replace(dateMatch, '') : text;
       titleBase = stripEdges(titleBase.replace(/^(까지|부터|에는|에|쯤|경)\s*/, ''));
 
+      var timeInfo = parseTimeRangeFromText(text);
+      if(timeInfo) titleBase = stripEdges(titleBase.replace(timeInfo.matchStr, ''));
+
       var phoneMatch = text.match(/01[0-9]-?\d{3,4}-?\d{4}|0\d{1,2}-\d{3,4}-\d{4}/);
       if(phoneMatch){
         var cname = stripEdges(text.replace(phoneMatch[0], '').replace(/연락처|전화번호|전화|번호|등록|추가/g, ''));
@@ -1759,6 +1805,10 @@
         return { kind:'memo', text: text, note:'날짜를 못 찾아서 메모로 넣었어요.' };
       }
 
+      if(timeInfo){
+        return { kind:'event', title: titleBase || text, date: dateIso || isoOf(now), time: timeInfo.start, timeEnd: timeInfo.end };
+      }
+
       if(dateIso || /하기$|검토|제출|회의|준비|예약|확인|마감|납부|참석/.test(text)){
         return { kind:'sched', title: titleBase || text, date: dateIso || isoOf(now) };
       }
@@ -1769,6 +1819,7 @@
     function kindMeta(k){
       return {
         sched:  { label:'할일', cls:'k-sched' },
+        event:  { label:'일정', cls:'k-event' },
         dday:   { label:'D-Day',    cls:'k-dday' },
         contact:{ label:'연락처',    cls:'k-contact' },
         memo:   { label:'메모',      cls:'k-memo' }
@@ -1780,6 +1831,7 @@
       var meta = kindMeta(parsed.kind);
       var line;
       if(parsed.kind === 'sched') line = parsed.title + ' · ' + parsed.date;
+      else if(parsed.kind === 'event') line = parsed.title + ' · ' + parsed.date + ' ' + parsed.time + (parsed.timeEnd ? '~' + parsed.timeEnd : '');
       else if(parsed.kind === 'dday') line = parsed.name + ' · ' + parsed.date;
       else if(parsed.kind === 'contact') line = parsed.name + ' · ' + parsed.phone;
       else line = parsed.text;
@@ -1802,6 +1854,10 @@
         schedule.push({id: schedNextId++, title:p.title, date:p.date, time:'', project:'개인', priority:'중간', progress:0, repeat:'none'});
         save('griddesk.schedule', schedule); save('griddesk.schedule.nextId', schedNextId);
         renderSched(); renderCal(); flashPanel('panel-todo');
+      } else if(p.kind === 'event'){
+        schedule.push({id: schedNextId++, title:p.title, date:p.date, time:p.time, timeEnd:p.timeEnd, project:'개인', priority:'중간', progress:0, repeat:'none'});
+        save('griddesk.schedule', schedule); save('griddesk.schedule.nextId', schedNextId);
+        renderSched(); renderCal(); flashPanel('panel-event');
       } else if(p.kind === 'dday'){
         ddays.push({n:p.name, d:p.date}); save('griddesk.ddays', ddays);
         renderDdays(); flashPanel('dday-section');
