@@ -481,7 +481,7 @@
       <div class="dday-add">
         <input type="text" id="ddayName" placeholder="이름" maxlength="30">
         <input type="date" id="ddayDate">
-        <button id="ddayAdd" style="border:1px solid var(--grid-strong);background:var(--accent-soft);color:var(--accent);border-radius:12px;font-weight:600;padding:0 14px;">추가</button>
+        <button id="ddayAdd" hidden style="border:1px solid var(--grid-strong);background:var(--accent-soft);color:var(--accent);border-radius:12px;font-weight:600;padding:0 14px;">추가</button>
       </div>
       <ul class="dday-list horiz" id="ddayList"></ul>
     </div>
@@ -509,7 +509,7 @@
           <div class="add-row">
             <input type="text" id="calEventTitle" placeholder="제목을 입력하고 Enter" maxlength="60">
             <input type="text" id="calEventTime" placeholder="예: 10시~11시" style="flex:0 0 110px;">
-            <button id="calEventAdd">추가</button>
+            <button id="calEventAdd" hidden>추가</button>
           </div>
         </div>
       </div>
@@ -536,7 +536,7 @@
           <input type="date" id="todoDate">
           <select id="todoPriority"><option>높음</option><option selected>중간</option><option>낮음</option></select>
           <select id="todoRepeat"><option value="none">반복없음</option><option value="weekly">매주</option><option value="monthly">매월</option></select>
-          <button id="todoAdd">추가</button>
+          <button id="todoAdd" hidden>추가</button>
         </div>
         <div id="schedGroups"></div>
         <ul class="rows" id="schedList"></ul>
@@ -562,7 +562,7 @@
       <div class="panel-body">
         <div class="add-row">
           <input type="text" id="memoTitle" placeholder="전달할 것, 잊으면 안 되는 것을 적고 Enter" maxlength="200">
-          <button id="memoAdd">추가</button>
+          <button id="memoAdd" hidden>추가</button>
         </div>
         <ul class="rows" id="memoList"></ul>
       </div>
@@ -616,7 +616,7 @@
     <div class="add-row">
       <input type="text" id="materialTitle" placeholder="자료 이름" maxlength="40">
       <input type="text" id="materialUrl" placeholder="주소(URL)" maxlength="200" style="flex:1 1 140px;">
-      <button id="materialAdd">추가</button>
+      <button id="materialAdd" hidden>추가</button>
     </div>
     <ul class="rows" id="materialList"></ul>
   </div>
@@ -642,7 +642,7 @@
       <input type="text" id="contactName" placeholder="이름" maxlength="20" style="flex:1 1 60px;">
       <input type="text" id="contactPhone" placeholder="전화번호" maxlength="20" style="flex:1 1 80px;">
       <input type="text" id="contactEmail" placeholder="이메일(선택)" maxlength="60" style="flex:1 1 80px;">
-      <button id="contactAdd">저장</button>
+      <button id="contactAdd" hidden>저장</button>
     </div>
     <ul class="rows" id="contactList"></ul>
   </div>
@@ -1140,6 +1140,8 @@
   }
   document.getElementById('todoAdd').addEventListener('click', addTodo);
   document.getElementById('todoTitle').addEventListener('keydown', function(e){ if(e.key === 'Enter') addTodo(); });
+  document.getElementById('todoProject').addEventListener('keydown', function(e){ if(e.key === 'Enter') addTodo(); });
+  document.getElementById('todoDate').addEventListener('keydown', function(e){ if(e.key === 'Enter') addTodo(); });
 
   function renderCalAddLabel(){
     var label = document.getElementById('calAddLabel');
@@ -1168,6 +1170,7 @@
   }
   document.getElementById('calEventAdd').addEventListener('click', addCalEvent);
   document.getElementById('calEventTitle').addEventListener('keydown', function(e){ if(e.key === 'Enter') addCalEvent(); });
+  document.getElementById('calEventTime').addEventListener('keydown', function(e){ if(e.key === 'Enter') addCalEvent(); });
   renderCalAddLabel();
   document.getElementById('schedFilterClear').addEventListener('click', function(){ selectedDate = null; renderSched(); renderCal(); renderCalAddLabel(); });
   document.getElementById('tidyBtn').addEventListener('click', function(){
@@ -1352,6 +1355,7 @@
     renderDockPins();
   }
   document.getElementById('materialAdd').addEventListener('click', addMaterial);
+  document.getElementById('materialTitle').addEventListener('keydown', function(e){ if(e.key==='Enter') addMaterial(); });
   document.getElementById('materialUrl').addEventListener('keydown', function(e){ if(e.key==='Enter') addMaterial(); });
   function addMaterial(){
     var titleInput = document.getElementById('materialTitle');
@@ -1424,6 +1428,8 @@
     document.getElementById('contactCount').textContent = contacts.length + '명';
   }
   document.getElementById('contactAdd').addEventListener('click', addContact);
+  document.getElementById('contactName').addEventListener('keydown', function(e){ if(e.key==='Enter') addContact(); });
+  document.getElementById('contactPhone').addEventListener('keydown', function(e){ if(e.key==='Enter') addContact(); });
   document.getElementById('contactEmail').addEventListener('keydown', function(e){ if(e.key==='Enter') addContact(); });
   function addContact(){
     var nameInput = document.getElementById('contactName');
@@ -1475,7 +1481,7 @@
     });
     document.getElementById('ddayCount').textContent = ddays.length + '개';
   }
-  document.getElementById('ddayAdd').addEventListener('click', function(){
+  function addDday(){
     var nameInput = document.getElementById('ddayName');
     var dateInput = document.getElementById('ddayDate');
     var n = nameInput.value.trim(); var d = dateInput.value;
@@ -1483,7 +1489,10 @@
     ddays.push({n:n, d:d}); save('griddesk.ddays', ddays);
     nameInput.value = ''; dateInput.value = '';
     renderDdays();
-  });
+  }
+  document.getElementById('ddayAdd').addEventListener('click', addDday);
+  document.getElementById('ddayName').addEventListener('keydown', function(e){ if(e.key === 'Enter') addDday(); });
+  document.getElementById('ddayDate').addEventListener('keydown', function(e){ if(e.key === 'Enter') addDday(); });
   renderDdays();
 
   /* ---------- 자료함 · 메시지 발송 팝업 (독 버튼으로 열고 닫음, 그리드를 차지하지 않음) ---------- */
