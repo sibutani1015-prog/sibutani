@@ -25,6 +25,7 @@
     --warn:#B06A56;
     --gold:#A8895A;
     --shadow: 0 1px 6px rgba(20,60,45,0.12);
+    --side-gap: 14px;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark){
@@ -64,7 +65,7 @@
   button{ cursor:pointer; }
 
   .page{
-    width:80%; max-width:none; margin:0; padding: 12px 14px 62px;
+    width:calc(80% - var(--side-gap)); max-width:none; margin:0 0 0 var(--side-gap); padding: 12px 14px 62px;
     height:100vh; overflow:hidden;
     display:flex; flex-direction:column;
     background:var(--paper);
@@ -373,7 +374,7 @@
   .qc-actions .cancel{ background:var(--cell-alt); color:var(--ink-soft); }
 
   /* ---------- dock ---------- */
-  .dock-wrap{ position:fixed; left:0; width:80%; bottom:12px; display:flex; justify-content:center; pointer-events:none; z-index:10; }
+  .dock-wrap{ position:fixed; left:var(--side-gap); width:calc(80% - var(--side-gap)); bottom:12px; display:flex; justify-content:center; pointer-events:none; z-index:10; }
   .dock{ pointer-events:auto; display:flex; gap:2px; padding:6px; background:var(--accent-soft); backdrop-filter:blur(10px); border:1px solid var(--grid-strong); border-radius:20px; box-shadow:0 8px 24px rgba(0,0,0,0.18); width:56%; justify-content:center; overflow-x:auto; }
   .dock button{ position:relative; flex:none; width:44px; height:44px; display:flex; align-items:center; justify-content:center; background:none; border:none; border-radius:14px; color:var(--ink-soft); }
   .dock button svg{ width:19px; height:19px; stroke:currentColor; }
@@ -389,7 +390,7 @@
   .popover-back{ position:fixed; inset:0; background:transparent; display:none; z-index:15; }
   .popover-back.open{ display:block; }
   .popover{
-    position:fixed; left:40%; bottom:70px; transform:translateX(-50%);
+    position:fixed; left:calc(40% + var(--side-gap) / 2); bottom:70px; transform:translateX(-50%);
     width:min(380px, 90vw); max-height:58vh;
     background:var(--cell); border:1px solid var(--grid-strong); border-radius:18px;
     box-shadow:0 20px 40px rgba(0,0,0,0.25);
