@@ -167,6 +167,12 @@
   }
   .panel-head h2 svg{ width:15px; height:15px; stroke:var(--accent); flex:none; }
   .panel-head .count{ font-size:11px; color:var(--ink-soft); font-family:var(--mono); white-space:nowrap; }
+  .panel-head h2 .head-file-link{ display:inline-flex; align-items:center; gap:2px; min-width:0; }
+  .panel-head h2 .file-link-btn{ background:var(--accent-soft); border:1px solid var(--accent); color:var(--accent); border-radius:8px; padding:2px 6px; font:inherit; font-size:11px; font-weight:600; cursor:pointer; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .panel-head h2 .file-unlink-btn{ background:none; border:none; color:var(--ink-faint); font-size:14px; line-height:1; cursor:pointer; padding:2px 4px; flex:none; }
+  .panel-head h2 .file-unlink-btn:hover{ color:var(--warn); }
+  .panel-head h2 .file-link-set-btn{ background:none; border:1px dashed var(--grid-strong); color:var(--ink-faint); border-radius:8px; padding:2px 6px; font:inherit; font-size:11px; cursor:pointer; white-space:nowrap; }
+  .panel-head h2 .file-link-set-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .panel-body{ padding:10px 12px 12px; flex:1; overflow:auto; scrollbar-width:none; }
   .panel-body::-webkit-scrollbar{ display:none; }
 
@@ -539,7 +545,7 @@
 
     <section class="panel ga-todo" id="panel-todo">
       <div class="panel-head">
-        <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>할일</h2>
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>할일<span class="head-file-link" id="todoFileLinkWrap" hidden><button id="todoFileOpen" class="file-link-btn" type="button"></button><button id="todoFileUnlink" class="file-unlink-btn" type="button" aria-label="연결 해제" title="연결 해제">×</button></span><button id="todoFileSet" class="file-link-set-btn" type="button" title="엑셀 파일 연결하기 - 연결해두면 이 제목이나 독의 할일 아이콘을 눌렀을 때 바로 열려요">📎 엑셀 연결</button></h2>
         <span class="count" id="schedCount">0건</span>
       </div>
       <div class="panel-body">
@@ -726,6 +732,7 @@
     <p>빈 곳을 클릭하면 그 아래 바탕화면 아이콘이 그대로 눌려요. 화면 오른쪽 아래 트레이 아이콘을 오른쪽 클릭하면 새로고침·앞으로 보기·모니터 선택·시작 시 자동 실행·종료를 할 수 있어요. <b>Ctrl+Alt+D</b>를 누르면 위젯이 보이면 숨고, 숨어있으면 다시 보여요 — 독의 <b>잠깐 숨기기</b> 아이콘을 눌러도 똑같이 바로 숨길 수 있어요(잠금 없이).</p>
     <p>퇴근할 때는 위젯 안에서 <b>Ctrl+Backspace</b>를 누르세요. 문서 폴더에 백업 파일을 하나 남기고 프로그램이 완전히 종료돼요.</p>
     <p>자료함의 <b>"이 컴퓨터의 파일 연결하기"</b>로 엑셀 파일처럼 자주 쓰는 특정 파일을 골라두면, 다음부터는 그 항목을 누르는 순간 그 파일이 평소 쓰던 프로그램(엑셀 등)으로 바로 열려요.</p>
+    <p><b>할일</b> 제목 옆의 <b>📎 엑셀 연결</b>로 자주 쓰는 엑셀 파일 하나를 연결해두면, 그 제목을 누르거나 하단 독의 <b>할일</b> 아이콘을 눌렀을 때 바로 그 파일이 열려요. 연결을 없애려면 옆의 × 를 누르면 돼요.</p>
     <p>하단 독의 <b>톱니바퀴</b>를 누르면 편집 모드가 켜져요 — 각 칸의 위쪽 제목 줄을 눌러 끌면 위치가, 오른쪽 아래 모서리를 끌면 크기가 바뀌어요. 한 번 옮기면 이 컴퓨터에서는 계속 그 자리에 저장돼요.</p>
     <button id="modalClose">닫기</button>
   </div>
@@ -1466,6 +1473,61 @@
   }
   renderMaterials();
 
+  /* ---------- 할일: 엑셀 파일 하나를 연결해두면 제목 옆 버튼이나 독의 할일
+     아이콘을 눌렀을 때 그 파일이 바로 열림 ---------- */
+  var todoLinkedFile = load('griddesk.todoLinkedFile', null);
+  var todoFileSetBtn = document.getElementById('todoFileSet');
+  var todoFileLinkWrap = document.getElementById('todoFileLinkWrap');
+  var todoFileOpenBtn = document.getElementById('todoFileOpen');
+  var todoFileUnlinkBtn = document.getElementById('todoFileUnlink');
+
+  function renderTodoFileLink(){
+    if(!todoFileSetBtn) return;
+    if(todoLinkedFile){
+      var base = todoLinkedFile.replace(/\\/g, '/').split('/').pop();
+      todoFileOpenBtn.textContent = '📎 ' + base;
+      todoFileOpenBtn.title = todoLinkedFile;
+      todoFileLinkWrap.hidden = false;
+      todoFileSetBtn.hidden = true;
+    } else {
+      todoFileLinkWrap.hidden = true;
+      todoFileSetBtn.hidden = false;
+    }
+  }
+  function openTodoLinkedFile(){
+    if(!todoLinkedFile || !(window.api && window.api.openPath)) return;
+    window.api.openPath(todoLinkedFile).then(function(res){
+      if(!res || !res.ok) alert('파일을 열 수 없어요. 파일이 옮겨졌거나 지워졌을 수 있어요.\n' + todoLinkedFile);
+    });
+  }
+  if(window.api && window.api.selectMaterialFile){
+    if(todoFileSetBtn){
+      todoFileSetBtn.addEventListener('click', function(e){
+        e.stopPropagation();
+        window.api.selectMaterialFile().then(function(filePath){
+          if(!filePath) return;
+          todoLinkedFile = filePath;
+          save('griddesk.todoLinkedFile', todoLinkedFile);
+          renderTodoFileLink();
+        });
+      });
+    }
+    if(todoFileOpenBtn){
+      todoFileOpenBtn.addEventListener('click', function(e){ e.stopPropagation(); openTodoLinkedFile(); });
+    }
+    if(todoFileUnlinkBtn){
+      todoFileUnlinkBtn.addEventListener('click', function(e){
+        e.stopPropagation();
+        todoLinkedFile = null;
+        save('griddesk.todoLinkedFile', todoLinkedFile);
+        renderTodoFileLink();
+      });
+    }
+  } else if(todoFileSetBtn){
+    todoFileSetBtn.hidden = true;
+  }
+  renderTodoFileLink();
+
   /* ---------- messaging / contacts ---------- */
   var msgBox = document.getElementById('msgTemplate');
   msgBox.value = load('griddesk.msgTemplate', '안녕하세요! 전해드릴 소식이 있어 연락드립니다 :)');
@@ -1630,7 +1692,10 @@
       var el = document.getElementById(id);
       el.scrollIntoView({behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'center'});
       flashPanel(id);
-      if(id === 'panel-todo') document.getElementById('todoTitle').focus({preventScroll:true});
+      if(id === 'panel-todo'){
+        if(todoLinkedFile){ openTodoLinkedFile(); }
+        else { document.getElementById('todoTitle').focus({preventScroll:true}); }
+      }
       if(id === 'panel-memo') document.getElementById('memoTitle').focus({preventScroll:true});
       if(id === 'dday-section') document.getElementById('ddayName').focus({preventScroll:true});
     });
