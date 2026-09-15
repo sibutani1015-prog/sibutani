@@ -242,10 +242,15 @@
     padding:8px 9px; font-size:13px;
   }
   .add-row input[type=text]{ flex:1 1 110px; min-width:0; }
-  .add-row input[type=date]{ flex:0 0 132px; font-family:var(--mono); font-size:12px; }
+  .add-row input[type=date]{ flex:0 0 112px; font-family:var(--mono); font-size:11.5px; }
   .add-row input[type=time]{ flex:0 0 92px; font-family:var(--mono); font-size:12px; }
   .add-row select{ flex:0 0 76px; }
   .add-row input:focus, textarea:focus, select:focus{ outline:none; border-color:var(--accent); }
+  /* 우선순위·반복은 한 묶음으로 다뤄서, 줄바꿈이 일어나도 둘이 떨어지지 않게 함 */
+  .add-row .prio-repeat-group{ display:flex; gap:6px; flex:0 0 auto; }
+  .add-row .prio-repeat-group select{ flex:0 0 auto; }
+  .add-row .prio-repeat-group select#todoPriority{ flex-basis:56px; }
+  .add-row .prio-repeat-group select#todoRepeat{ flex-basis:80px; }
   .add-row > button{
     flex:0 0 auto; border:1px solid var(--grid-strong); background:var(--accent-soft); color:var(--accent);
     border-radius:12px; font-weight:600; font-size:13px; padding:0 14px;
@@ -658,12 +663,14 @@
           <button id="schedFilterClear">전체보기</button>
         </div>
         <div class="add-row">
-          <input type="text" id="todoTitle" placeholder="제목을 입력하고 Enter" maxlength="60">
-          <input type="text" id="todoProject" list="projectList" placeholder="사업명" maxlength="30" style="flex:1 1 90px;">
-          <datalist id="projectList"></datalist>
           <input type="date" id="todoDate">
-          <select id="todoPriority"><option>높음</option><option selected>중간</option><option>낮음</option></select>
-          <select id="todoRepeat"><option value="none">반복없음</option><option value="weekly">매주</option><option value="monthly">매월</option></select>
+          <input type="text" id="todoProject" list="projectList" placeholder="사업명" maxlength="30" style="flex:1 1 70px;">
+          <datalist id="projectList"></datalist>
+          <span class="prio-repeat-group">
+            <select id="todoPriority"><option>높음</option><option selected>중간</option><option>낮음</option></select>
+            <select id="todoRepeat"><option value="none">반복없음</option><option value="weekly">매주</option><option value="monthly">매월</option></select>
+          </span>
+          <input type="text" id="todoTitle" placeholder="제목을 입력하고 Enter" maxlength="60">
           <button id="todoAdd" hidden>추가</button>
         </div>
         <div id="schedGroups"></div>
