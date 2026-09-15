@@ -6,57 +6,35 @@
 <title>그리드 데스크</title>
 <style>
   :root{
+    /* 엘리자벳 테마: 보라·검정·은색. 시스템 라이트/다크 설정과 무관하게 항상 이 팔레트로 고정
+       (글꼴은 인터넷 없이도 항상 나오게 기존 시스템 글꼴 그대로 둠 - 색상만 교체) */
     --ui: 'Malgun Gothic', '맑은 고딕', 'Segoe UI', system-ui, sans-serif;
     --mono: 'Consolas', 'Cascadia Mono', 'Segoe UI', var(--ui);
 
-    --ink:#1E2C25;
-    --ink-soft:#4A6357;
-    --ink-faint:#7B9688;
-    --paper:#DCEEE1;
-    --cell:#F3FAF6;
-    --cell-alt:#E7F3EC;
-    --grid:#C7E3D3;
-    --grid-strong:#9CC9AE;
-    --accent:#238F67;
-    --accent-ink:#F3FBF7;
-    --accent-soft:#C7EAD9;
-    --sun:#B06A56;
-    --sat:#5C7A96;
-    --warn:#B06A56;
-    --warn-soft:#F0DDD4;
-    --gold:#A8895A;
-    --gold-soft:#EFE3D0;
-    --prio-high:#D64545;
-    --prio-mid:#DDAA1E;
-    --m0:#DCEEDC; --m1:#F6D9E6; --m2:#FBEFC2; --m3:#F7DCD3;
-    --m4:#E3D9F5; --m5:#D6EAF5; --m6:#D6F0EA; --m7:#FBE3C8;
-    --shadow: 0 1px 6px rgba(20,60,45,0.12);
+    --ink:#F3EEFA;
+    --ink-soft:#C6B9DC;
+    --ink-faint:#8A7CA6;
+    --paper:#100B18;
+    --cell:#1C1428;
+    --cell-alt:#251A35;
+    --grid:#3C2C54;
+    --grid-strong:#5A4380;
+    --accent:#A473E8;
+    --accent-ink:#150B22;
+    --accent-soft:#33244A;
+    --sun:#F2607A;
+    --sat:#7C93C7;
+    --warn:#F2607A;
+    --warn-soft:#3A2030;
+    --gold:#E3B25C;
+    --gold-soft:#3A3020;
+    --prio-high:#F2607A;
+    --prio-mid:#E3B25C;
+    --m0:#2A2140; --m1:#3A2038; --m2:#24304A; --m3:#3A2A20;
+    --m4:#1F3530; --m5:#332440; --m6:#402A2E; --m7:#263340;
+    --shadow: 0 4px 18px rgba(6,3,14,0.45);
     --side-gap: 14px;
-    color-scheme: light;
-  }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --ink:#E4F0E8; --ink-soft:#9BBBAB; --ink-faint:#5D7869;
-      --paper:#0E1512; --cell:#1A2420; --cell-alt:#1F2B25;
-      --grid:#324339; --grid-strong:#48604F;
-      --accent:#3FCE9A; --accent-ink:#0A1310; --accent-soft:#22392E;
-      --sun:#D98F76; --sat:#7B98B2; --warn:#D98F76; --warn-soft:#3A2A22; --gold:#C7AC7E; --gold-soft:#362E1E;
-      --prio-high:#E8746B; --prio-mid:#E8C34A;
-      --m0:#22392E; --m1:#3A2530; --m2:#3A3320; --m3:#3A2A22;
-      --m4:#2A2438; --m5:#22303A; --m6:#1F3530; --m7:#362E1E;
-      --shadow: 0 1px 8px rgba(0,0,0,0.4);
-    }
-  }
-  :root[data-theme="dark"]{
-    --ink:#E4F0E8; --ink-soft:#9BBBAB; --ink-faint:#5D7869;
-    --paper:#0E1512; --cell:#1A2420; --cell-alt:#1F2B25;
-    --grid:#324339; --grid-strong:#48604F;
-    --accent:#3FCE9A; --accent-ink:#0A1310; --accent-soft:#22392E;
-    --sun:#D98F76; --sat:#7B98B2; --warn:#D98F76; --warn-soft:#3A2A22; --gold:#C7AC7E; --gold-soft:#362E1E;
-    --prio-high:#E8746B; --prio-mid:#E8C34A;
-    --m0:#22392E; --m1:#3A2530; --m2:#3A3320; --m3:#3A2A22;
-    --m4:#2A2438; --m5:#22303A; --m6:#1F3530; --m7:#362E1E;
-    --shadow: 0 1px 8px rgba(0,0,0,0.4);
+    color-scheme: dark;
   }
 
   *{ box-sizing:border-box; }
