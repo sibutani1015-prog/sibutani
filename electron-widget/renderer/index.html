@@ -950,10 +950,13 @@
   /* ---------- click-through: pass mouse events to the real desktop over
      empty space, capture them over an actual panel/dock element ---------- */
   var lastMouseX = -1, lastMouseY = -1;
+  var lastIgnoreState = null; // 마우스를 움직일 때마다가 아니라, 실제로 상태가 바뀔 때만 메인 프로세스에 알림
   function refreshClickThrough(){
     if(!window.api) return;
     var el = (lastMouseX >= 0) ? document.elementFromPoint(lastMouseX, lastMouseY) : null;
-    var interactive = el && el.closest('.panel, .dock, .modal-back.open, .head, .popover.open, .popover-back.open');
+    var interactive = !!(el && el.closest('.panel, .dock, .modal-back.open, .head, .popover.open, .popover-back.open'));
+    if(interactive === lastIgnoreState) return;
+    lastIgnoreState = interactive;
     window.api.setIgnoreMouseEvents(!interactive);
   }
   (function(){
