@@ -800,12 +800,18 @@
 
   /* ---------- click-through: pass mouse events to the real desktop over
      empty space, capture them over an actual panel/dock element ---------- */
+  var lastMouseX = -1, lastMouseY = -1;
+  function refreshClickThrough(){
+    if(!window.api) return;
+    var el = (lastMouseX >= 0) ? document.elementFromPoint(lastMouseX, lastMouseY) : null;
+    var interactive = el && el.closest('.panel, .dock, .modal-back.open, .head, .popover.open, .popover-back.open');
+    window.api.setIgnoreMouseEvents(!interactive);
+  }
   (function(){
     if(!window.api) return;
     document.addEventListener('mousemove', function(e){
-      var el = document.elementFromPoint(e.clientX, e.clientY);
-      var interactive = el && el.closest('.panel, .dock, .modal-back.open, .head, .popover.open, .popover-back.open');
-      window.api.setIgnoreMouseEvents(!interactive);
+      lastMouseX = e.clientX; lastMouseY = e.clientY;
+      refreshClickThrough();
     });
   })();
 
@@ -874,9 +880,15 @@
     var autoCloseTimer = null;
     var photoFiles = [];
 
+    var lastPoolWasPhoto = false;
     function updatePhotoBtnLabel(){
       if(!photoBtn) return;
       photoBtn.textContent = photoFiles.length ? '사진 폴더 바꾸기' : '사진 폴더 선택 (한 번만 하면 계속 자동)';
+      // 폴더를 이미 설정해둔 뒤에는, 국어·영어 카드처럼 사진과 상관없는 카드에서까지
+      // "폴더 선택"이 매번 뜨면 계속 뭔가 하라고 재촉하는 것처럼 보이니, 사진이 실제로
+      // 나온 카드에서만 "바꾸기"를 보여준다. 아직 한 번도 설정 안 했으면 어떤 카드에서든
+      // 안내가 보이게 둔다.
+      photoBtn.hidden = photoFiles.length > 0 && !lastPoolWasPhoto;
     }
     function refreshPhotos(){
       if(!(window.api && window.api.listPhotos)) return;
@@ -903,6 +915,7 @@
     function closeBreak(){
       backEl.classList.remove('open');
       clearTimeout(autoCloseTimer);
+      refreshClickThrough();
     }
     function showBreak(){
       var pools = currentPools();
@@ -924,7 +937,13 @@
         photoFrameEl.style.display = 'none';
         photoEl.src = '';
       }
+      lastPoolWasPhoto = !!pool.photo;
+      updatePhotoBtnLabel();
       backEl.classList.add('open');
+      // 매시 50분엔 마우스가 안 움직인 채로 자동으로 뜨기 때문에, mousemove를
+      // 기다리지 않고 바로 클릭을 받을 수 있게 강제로 켜준다 (안 그러면 카드가
+      // 떠 있어도 "확인"을 눌러도 반응이 없는 것처럼 보임).
+      if(window.api) window.api.setIgnoreMouseEvents(false);
       clearTimeout(autoCloseTimer);
       autoCloseTimer = setTimeout(closeBreak, 60000);
     }
