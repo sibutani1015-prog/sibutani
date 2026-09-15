@@ -691,7 +691,7 @@
           </div>
           <button id="todoAdd" hidden>추가</button>
         </div>
-        <p class="empty-hint" id="todoExcelHint" hidden style="margin:0 0 10px;">엑셀에 연결된 상태예요 — 업무 추가/수정은 엑셀에서 하시면 저장할 때마다 자동으로 반영돼요.</p>
+        <p class="empty-hint" id="todoExcelHint" hidden style="margin:0 0 10px;">엑셀에 연결된 상태예요 — 엑셀 항목(진행률 등)은 엑셀에서 수정하면 저장할 때마다 자동 반영돼요. 아래에서 직접 추가하는 항목은 엑셀에는 남지 않고 이 컴퓨터의 위젯에만 저장돼요.</p>
         <div id="schedGroups"></div>
         <ul class="rows" id="schedList"></ul>
       </div>
@@ -1359,7 +1359,9 @@
       } else {
         var order = [];
         var byProject = {};
-        var sortedTodos = excelProjects ? todosOnly.slice() : todosOnly.slice().sort(function(a,b){ return todoOrderKey(a) - todoOrderKey(b); });
+        var sortedTodos = excelProjects
+          ? excelProjects.concat(manualTodos().slice().sort(function(a,b){ return todoOrderKey(a) - todoOrderKey(b); }))
+          : todosOnly.slice().sort(function(a,b){ return todoOrderKey(a) - todoOrderKey(b); });
         sortedTodos.forEach(function(item){
           var p = item.project || '개인';
           if(!byProject[p]){ byProject[p] = []; order.push(p); }
@@ -1694,8 +1696,13 @@
   var todoAddRow = document.getElementById('todoAddRow');
   var todoExcelHint = document.getElementById('todoExcelHint');
 
+  function manualTodos(){
+    return schedule.filter(function(s){ return !isEvent(s); });
+  }
+  // 엑셀에 연결돼 있어도 위젯에서 직접 추가한 항목은 계속 함께 보여줌(엑셀에는
+  // 반영하지 않고 이 컴퓨터에만 저장) - 엑셀 항목은 _fromExcel 표시로 읽기 전용 처리됨.
   function activeTodos(){
-    return excelProjects || schedule.filter(function(s){ return !isEvent(s); });
+    return excelProjects ? excelProjects.concat(manualTodos()) : manualTodos();
   }
 
   function renderTodoFileLink(){
@@ -1710,7 +1717,6 @@
       todoFileLinkWrap.hidden = true;
       todoFileSetBtn.hidden = false;
     }
-    if(todoAddRow) todoAddRow.hidden = !!todoLinkedFile;
     if(todoExcelHint) todoExcelHint.hidden = !todoLinkedFile;
   }
 
