@@ -257,6 +257,14 @@ function saveAndQuit() {
     // even if the backup write fails, don't block quitting
   }
   writeSyncCopy();
+  // 퇴근 전 한 번에: 저장까지 끝났으니 컴퓨터 자체도 종료. 15초 유예를 둬서
+  // 실수로 눌렀을 때 명령 프롬프트에서 shutdown /a 로 취소할 시간을 줌.
+  notifyDday('저장 완료', '15초 후 컴퓨터가 종료됩니다.');
+  try {
+    spawn('shutdown.exe', ['/s', '/t', '15'], { windowsHide: true });
+  } catch (e) {
+    // 종료 명령이 실패해도(권한 등) 앱 종료 자체는 계속 진행
+  }
   app.quit();
 }
 ipcMain.on('save-and-quit', saveAndQuit);

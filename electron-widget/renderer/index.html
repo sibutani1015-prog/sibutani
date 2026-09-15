@@ -244,6 +244,8 @@
   .add-row select{ flex:0 0 76px; }
   .add-row input:focus, textarea:focus, select:focus{ outline:none; border-color:var(--accent); }
   /* 우선순위·반복은 한 묶음으로 다뤄서, 줄바꿈이 일어나도 둘이 떨어지지 않게 함 */
+  .add-row .todo-row2{ display:flex; gap:8px; flex:1 1 100%; }
+  .add-row .todo-row2 input[type=text]{ flex:1 1 110px; }
   .add-row .prio-repeat-group{ display:flex; gap:6px; flex:0 0 auto; }
   .add-row .prio-repeat-group select{ flex:0 0 auto; }
   .add-row .prio-repeat-group select#todoPriority{ flex-basis:56px; }
@@ -436,7 +438,7 @@
 
   /* ---------- dock ---------- */
   .dock-wrap{ position:fixed; left:var(--side-gap); width:calc(80% - var(--side-gap)); bottom:12px; display:flex; justify-content:center; pointer-events:none; z-index:10; }
-  .dock{ pointer-events:auto; display:flex; gap:2px; padding:6px; background:var(--accent-soft); backdrop-filter:blur(10px); border:1px solid var(--grid-strong); border-radius:20px; box-shadow:0 8px 24px rgba(0,0,0,0.18); width:56%; justify-content:center; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; }
+  .dock{ pointer-events:auto; display:flex; gap:2px; padding:6px; background:var(--accent-soft); backdrop-filter:blur(10px); border:1px solid var(--grid-strong); border-radius:20px; box-shadow:0 8px 24px rgba(0,0,0,0.18); width:min(94%, 760px); justify-content:center; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; }
   .dock::-webkit-scrollbar{ display:none; }
   .dock button{ position:relative; flex:none; width:44px; height:44px; display:flex; align-items:center; justify-content:center; background:none; border:none; border-radius:14px; color:var(--ink-soft); }
   .dock button svg{ width:19px; height:19px; stroke:currentColor; }
@@ -680,11 +682,13 @@
           <input type="date" id="todoDate">
           <input type="text" id="todoProject" list="projectList" placeholder="사업명" maxlength="30" style="flex:1 1 70px;">
           <datalist id="projectList"></datalist>
-          <span class="prio-repeat-group">
-            <select id="todoPriority"><option>높음</option><option selected>중간</option><option>낮음</option></select>
-            <select id="todoRepeat"><option value="none">반복없음</option><option value="weekly">매주</option><option value="monthly">매월</option></select>
-          </span>
-          <input type="text" id="todoTitle" placeholder="제목을 입력하고 Enter" maxlength="60">
+          <div class="todo-row2">
+            <span class="prio-repeat-group">
+              <select id="todoPriority"><option>높음</option><option selected>중간</option><option>낮음</option></select>
+              <select id="todoRepeat"><option value="none">반복없음</option><option value="weekly">매주</option><option value="monthly">매월</option></select>
+            </span>
+            <input type="text" id="todoTitle" placeholder="제목을 입력하고 Enter" maxlength="60">
+          </div>
           <button id="todoAdd" hidden>추가</button>
         </div>
         <p class="empty-hint" id="todoExcelHint" hidden style="margin:0 0 10px;">엑셀에 연결된 상태예요 — 업무 추가/수정은 엑셀에서 하시면 저장할 때마다 자동으로 반영돼요.</p>
@@ -859,8 +863,8 @@
     <button id="hideBtn"><span class="tip">잠깐 숨기기 (Ctrl+Alt+D로 다시 보기)</span>
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-10-8-10-8a18.5 18.5 0 0 1 4.22-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
     </button>
-    <button id="saveQuitBtn"><span class="tip">퇴근 전 한 번에: 저장 후 종료</span>
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+    <button id="saveQuitBtn"><span class="tip">퇴근 전 한 번에: 저장 후 컴퓨터 종료</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><path d="M18.36 6.64a9 9 0 1 1-12.72 0"/></svg>
     </button>
   </nav>
 </div>
@@ -870,7 +874,7 @@
     <h3 class="serif">그리드 데스크</h3>
     <p>학교용 위젯 프로그램의 짜임새를 참고해 만든 개인용 데스크톱 위젯이에요. 달력·일정·할일·자료함·메시지 발송·메모·AI 도우미·D-Day를 담았어요.</p>
     <p>빈 곳을 클릭하면 그 아래 바탕화면 아이콘이 그대로 눌려요. 화면 오른쪽 아래 트레이 아이콘을 오른쪽 클릭하면 새로고침·앞으로 보기·모니터 선택·시작 시 자동 실행·종료를 할 수 있어요. <b>Ctrl+Alt+D</b>를 누르면 위젯이 보이면 숨고, 숨어있으면 다시 보여요 — 독의 <b>잠깐 숨기기</b> 아이콘을 눌러도 똑같이 바로 숨길 수 있어요(잠금 없이).</p>
-    <p>퇴근할 때는 독(dock) 오른쪽 끝의 <b>저장 후 종료</b> 버튼을 누르거나, 위젯 안에서 <b>Ctrl+Backspace</b>를 누르세요. 문서 폴더에 백업 파일을 하나 남기고 프로그램이 완전히 종료돼요.</p>
+    <p>퇴근할 때는 독(dock) 오른쪽 끝의 <b>저장 후 종료</b> 버튼을 누르거나, 위젯 안에서 <b>Ctrl+Backspace</b>를 누르세요. 문서 폴더에 백업 파일을 남기고, 동기화 폴더가 설정돼 있으면 거기에도 남긴 뒤, <b>15초 뒤 컴퓨터까지 자동으로 종료</b>돼요.</p>
     <p>자료함의 <b>"이 컴퓨터의 파일 연결하기"</b>로 엑셀 파일처럼 자주 쓰는 특정 파일을 골라두면, 다음부터는 그 항목을 누르는 순간 그 파일이 평소 쓰던 프로그램(엑셀 등)으로 바로 열려요.</p>
     <p><b>할일</b> 제목 옆의 <b>📎 엑셀 연결</b>로 자주 쓰는 엑셀 파일 하나를 연결해두면, 그 제목을 누르거나 하단 독의 <b>할일</b> 아이콘을 눌렀을 때 바로 그 파일이 열려요. 연결을 없애려면 옆의 × 를 누르면 돼요.</p>
     <p><b>할일</b> 패널 위쪽에는 시작전·진행중·완료 건수와 완료율, 높음·중간·낮음 우선순위별 완료 현황이 한눈에 보여요. 같은 사업(카테고리) 안에서는 항목을 마우스로 눌러 끌면 순서를 원하는 대로 바꿀 수 있어요.</p>
@@ -1325,19 +1329,19 @@
       var opt = document.createElement('option'); opt.value = p; dl.appendChild(opt);
     });
 
+    // 일정 패널은 달력 날짜 선택과 무관하게 항상 등록된 전체 일정을 보여줌
+    var allEvents = schedule.filter(isEvent).sort(function(a,b){ return eventSortKey(a) < eventSortKey(b) ? -1 : 1; });
+    if(allEvents.length === 0){
+      var eHint2 = document.createElement('li');
+      eHint2.className = 'empty-hint';
+      eHint2.textContent = '등록된 일정이 없어요.';
+      eventsUl.appendChild(eHint2);
+    }
+    allEvents.forEach(function(item){ eventsUl.appendChild(buildSchedRow(item)); });
+
     if(selectedDate){
       groupsWrap.hidden = true; flatUl.hidden = false;
-      var dayEvents = schedule.filter(isEvent).filter(function(s){ return occursOn(s, selectedDate); })
-        .sort(function(a,b){ return eventSortKey(a) < eventSortKey(b) ? -1 : 1; });
       var dayTodos = activeTodos().filter(function(s){ return occursOn(s, selectedDate); });
-
-      if(dayEvents.length === 0){
-        var eHint = document.createElement('li');
-        eHint.className = 'empty-hint';
-        eHint.textContent = '이 날짜에 등록된 일정이 없어요.';
-        eventsUl.appendChild(eHint);
-      }
-      dayEvents.forEach(function(item){ eventsUl.appendChild(buildSchedRow(item, selectedDate)); });
 
       if(dayTodos.length === 0){
         var hint = document.createElement('li');
@@ -1348,15 +1352,6 @@
       dayTodos.forEach(function(item){ flatUl.appendChild(buildSchedRow(item, selectedDate)); });
     } else {
       flatUl.hidden = true; groupsWrap.hidden = false;
-
-      var allEvents = schedule.filter(isEvent).sort(function(a,b){ return eventSortKey(a) < eventSortKey(b) ? -1 : 1; });
-      if(allEvents.length === 0){
-        var eHint2 = document.createElement('li');
-        eHint2.className = 'empty-hint';
-        eHint2.textContent = '등록된 일정이 없어요.';
-        eventsUl.appendChild(eHint2);
-      }
-      allEvents.forEach(function(item){ eventsUl.appendChild(buildSchedRow(item)); });
 
       var todosOnly = activeTodos();
       if(todosOnly.length === 0){
