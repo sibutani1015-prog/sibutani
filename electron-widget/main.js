@@ -147,7 +147,7 @@ app.whenReady().then(() => {
 
   globalShortcut.register('CommandOrControl+Alt+D', () => {
     if (!mainWindow) return;
-    if (mainWindow.isVisible() && mainWindow.isFocused()) {
+    if (mainWindow.isVisible()) {
       mainWindow.hide();
     } else {
       bringToFront();
@@ -164,6 +164,12 @@ app.on('before-quit', () => { globalShortcut.unregisterAll(); });
 ipcMain.on('set-ignore-mouse-events', (event, ignore) => {
   if (!mainWindow) return;
   mainWindow.setIgnoreMouseEvents(ignore, { forward: true });
+});
+
+/* ---------- IPC: quick hide (no lock, just tuck the widget away instantly) ---------- */
+ipcMain.on('hide-widget', () => {
+  if (!mainWindow) return;
+  mainWindow.hide();
 });
 
 /* ---------- IPC: local JSON store (replaces the web version's localStorage) ---------- */

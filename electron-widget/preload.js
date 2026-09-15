@@ -9,6 +9,10 @@ contextBridge.exposeInMainWorld('api', {
   // widget itself receives the click.
   setIgnoreMouseEvents: (ignore) => ipcRenderer.send('set-ignore-mouse-events', ignore),
 
+  // Quick hide: tucks the widget out of sight instantly (no password/lock),
+  // brought back with the tray icon or Ctrl+Alt+D.
+  hideWidget: () => ipcRenderer.send('hide-widget'),
+
   store: {
     get: (key) => ipcRenderer.sendSync('store-get', key),
     set: (key, value) => ipcRenderer.send('store-set', key, value),

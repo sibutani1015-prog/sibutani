@@ -707,6 +707,9 @@
     <button id="exitBtn"><span class="tip">퇴사 체크리스트</span>
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     </button>
+    <button id="hideBtn"><span class="tip">잠깐 숨기기 (Ctrl+Alt+D로 다시 보기)</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-10-8-10-8a18.5 18.5 0 0 1 4.22-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+    </button>
   </nav>
 </div>
 
@@ -714,7 +717,7 @@
   <div class="modal">
     <h3 class="serif">그리드 데스크</h3>
     <p>학교용 위젯 프로그램의 짜임새를 참고해 만든 개인용 데스크톱 위젯이에요. 달력·일정·할일·자료함·메시지 발송·메모·AI 도우미·D-Day를 담았어요.</p>
-    <p>빈 곳을 클릭하면 그 아래 바탕화면 아이콘이 그대로 눌려요. 화면 오른쪽 아래 트레이 아이콘을 오른쪽 클릭하면 새로고침·앞으로 보기·모니터 선택·시작 시 자동 실행·종료를 할 수 있어요. <b>Ctrl+Alt+D</b>로 언제든 앞으로 가져올 수 있어요.</p>
+    <p>빈 곳을 클릭하면 그 아래 바탕화면 아이콘이 그대로 눌려요. 화면 오른쪽 아래 트레이 아이콘을 오른쪽 클릭하면 새로고침·앞으로 보기·모니터 선택·시작 시 자동 실행·종료를 할 수 있어요. <b>Ctrl+Alt+D</b>를 누르면 위젯이 보이면 숨고, 숨어있으면 다시 보여요 — 독의 <b>잠깐 숨기기</b> 아이콘을 눌러도 똑같이 바로 숨길 수 있어요(잠금 없이).</p>
     <p>하단 독의 <b>톱니바퀴</b>를 누르면 편집 모드가 켜져요 — 각 칸의 위쪽 제목 줄을 눌러 끌면 위치가, 오른쪽 아래 모서리를 끌면 크기가 바뀌어요. 한 번 옮기면 이 컴퓨터에서는 계속 그 자리에 저장돼요.</p>
     <button id="modalClose">닫기</button>
   </div>
@@ -1698,6 +1701,14 @@
     window.addEventListener('resize', applySaved);
     applySaved();
   })();
+
+  /* ---------- 잠깐 숨기기: 잠금 없이 바로 창을 숨김, Ctrl+Alt+D나 트레이 아이콘으로 다시 보기 ---------- */
+  var hideBtn = document.getElementById('hideBtn');
+  if(hideBtn && window.api && window.api.hideWidget){
+    hideBtn.addEventListener('click', function(){ window.api.hideWidget(); });
+  } else if(hideBtn){
+    hideBtn.hidden = true;
+  }
 
   /* ---------- info modal ---------- */
   var modalBack = document.getElementById('modalBack');
