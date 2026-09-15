@@ -205,17 +205,35 @@
   .progress-row .bar i{ display:block; height:100%; background:var(--accent); border-radius:6px; transition:width .3s; }
   .progress-row .pct{ font-size:11px; color:var(--ink-soft); font-family:var(--mono); flex:none; }
 
-  .sched-dash{ margin-bottom:10px; display:flex; flex-direction:column; gap:6px; }
-  .dash-row{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
-  .dash-chip{ font-size:11px; font-weight:600; padding:3px 8px; border-radius:10px; background:var(--cell-alt); color:var(--ink-soft); white-space:nowrap; display:inline-flex; align-items:center; gap:4px; }
-  .dash-chip b{ font-family:var(--mono); font-weight:700; }
-  .dash-chip.st-notstarted{ color:var(--ink-faint); }
-  .dash-chip.st-inprogress{ color:var(--gold); background:var(--gold-soft); }
-  .dash-chip.st-done{ color:var(--accent); background:var(--accent-soft); }
-  .dash-chip.pr-high{ color:var(--warn); background:var(--warn-soft); }
-  .dash-chip.pr-mid{ color:var(--gold); background:var(--gold-soft); }
-  .dash-chip.pr-low{ color:var(--accent); background:var(--accent-soft); }
-  .dash-rate{ margin-left:auto; font-size:11px; font-weight:700; color:var(--accent); font-family:var(--mono); }
+  .sched-dash{ margin-bottom:12px; display:flex; flex-direction:column; gap:8px; }
+
+  .dash-stats{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .dash-circle{ display:flex; flex-direction:column; align-items:center; gap:3px; flex:none; }
+  .dash-circle b{
+    width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:800; color:var(--accent-ink); font-family:var(--mono); box-shadow:var(--shadow);
+  }
+  .dash-circle span{ font-size:9px; color:var(--ink-soft); font-weight:700; }
+  .dash-circle.dash-total b{ background:var(--ink-soft); }
+  .dash-circle.dash-notstarted b{ background:var(--ink-faint); }
+  .dash-circle.dash-inprogress b{ background:var(--gold); }
+  .dash-circle.dash-done b{ background:var(--accent); }
+
+  .dash-donut{ position:relative; width:50px; height:50px; margin-left:auto; flex:none; }
+  .dash-donut svg{ width:100%; height:100%; transform:rotate(-90deg); }
+  .dash-donut .donut-bg{ fill:none; stroke:var(--grid); stroke-width:3.5; }
+  .dash-donut .donut-fg{ fill:none; stroke:var(--accent); stroke-width:3.5; stroke-linecap:round; transition:stroke-dasharray .4s ease; }
+  .dash-donut .donut-label{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:800; color:var(--accent); font-family:var(--mono); }
+
+  .dash-priority-bars{ display:flex; align-items:flex-end; gap:16px; padding:2px 6px 0; }
+  .pbar{ display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; min-width:0; }
+  .pbar-frac{ font-size:10px; font-weight:700; color:var(--ink-soft); font-family:var(--mono); }
+  .pbar-track{ width:14px; height:36px; border-radius:7px; background:var(--grid); display:flex; align-items:flex-end; overflow:hidden; }
+  .pbar-track i{ display:block; width:100%; border-radius:7px; transition:height .3s ease; }
+  .pbar-high .pbar-track i{ background:var(--warn); }
+  .pbar-mid .pbar-track i{ background:var(--gold); }
+  .pbar-low .pbar-track i{ background:var(--accent); }
+  .pbar-name{ font-size:9px; color:var(--ink-faint); font-weight:600; }
 
   /* ---------- shared form controls ---------- */
   .add-row{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
@@ -604,16 +622,35 @@
           <span class="pct" id="schedPct">0/0 완료</span>
         </div>
         <div class="sched-dash" id="schedDash">
-          <div class="dash-row">
-            <span class="dash-chip st-notstarted"><b id="dashNotStarted">0</b>시작전</span>
-            <span class="dash-chip st-inprogress"><b id="dashInProgress">0</b>진행중</span>
-            <span class="dash-chip st-done"><b id="dashDone">0</b>완료</span>
-            <span class="dash-rate" id="dashRate">완료율 0%</span>
+          <div class="dash-stats">
+            <div class="dash-circle dash-total"><b id="dashTotal">0</b><span>전체</span></div>
+            <div class="dash-circle dash-notstarted"><b id="dashNotStarted">0</b><span>시작전</span></div>
+            <div class="dash-circle dash-inprogress"><b id="dashInProgress">0</b><span>진행중</span></div>
+            <div class="dash-circle dash-done"><b id="dashDone">0</b><span>완료</span></div>
+            <div class="dash-donut">
+              <svg viewBox="0 0 36 36">
+                <circle class="donut-bg" cx="18" cy="18" r="15.9155"></circle>
+                <circle class="donut-fg" id="dashDonutFg" cx="18" cy="18" r="15.9155" stroke-dasharray="0 100"></circle>
+              </svg>
+              <span class="donut-label" id="dashRate">0%</span>
+            </div>
           </div>
-          <div class="dash-row">
-            <span class="dash-chip pr-high">높음 <b id="dashHigh">0/0</b></span>
-            <span class="dash-chip pr-mid">중간 <b id="dashMid">0/0</b></span>
-            <span class="dash-chip pr-low">낮음 <b id="dashLow">0/0</b></span>
+          <div class="dash-priority-bars">
+            <div class="pbar pbar-high">
+              <span class="pbar-frac" id="dashHigh">0/0</span>
+              <span class="pbar-track"><i id="dashHighBar" style="height:0%"></i></span>
+              <span class="pbar-name">높음</span>
+            </div>
+            <div class="pbar pbar-mid">
+              <span class="pbar-frac" id="dashMid">0/0</span>
+              <span class="pbar-track"><i id="dashMidBar" style="height:0%"></i></span>
+              <span class="pbar-name">중간</span>
+            </div>
+            <div class="pbar pbar-low">
+              <span class="pbar-frac" id="dashLow">0/0</span>
+              <span class="pbar-track"><i id="dashLowBar" style="height:0%"></i></span>
+              <span class="pbar-name">낮음</span>
+            </div>
           </div>
         </div>
         <div class="sched-filter" id="schedFilter" hidden>
@@ -1129,6 +1166,7 @@
     document.getElementById('schedPct').textContent = '평균 ' + avg + '% (' + total + '건)';
   }
 
+  var DONUT_CIRC = 2 * Math.PI * 15.9155; // r=15.9155 → 둘레가 딱 100이 되도록 맞춘 값
   function renderSchedDashboard(){
     var plain = schedule.filter(function(s){ return (s.repeat === 'none' || !s.repeat) && !isEvent(s); });
     var total = plain.length;
@@ -1136,15 +1174,19 @@
     var done = plain.filter(function(s){ return s.progress === 100; }).length;
     var inProgress = total - notStarted - done;
     var rate = total ? Math.round(done / total * 100) : 0;
+    document.getElementById('dashTotal').textContent = total;
     document.getElementById('dashNotStarted').textContent = notStarted;
     document.getElementById('dashInProgress').textContent = inProgress;
     document.getElementById('dashDone').textContent = done;
-    document.getElementById('dashRate').textContent = '완료율 ' + rate + '%';
+    document.getElementById('dashRate').textContent = rate + '%';
+    document.getElementById('dashDonutFg').style.strokeDasharray = (rate / 100 * DONUT_CIRC) + ' ' + DONUT_CIRC;
     ['높음','중간','낮음'].forEach(function(p, i){
-      var ids = ['dashHigh','dashMid','dashLow'];
+      var fracIds = ['dashHigh','dashMid','dashLow'];
+      var barIds = ['dashHighBar','dashMidBar','dashLowBar'];
       var ofP = plain.filter(function(s){ return (s.priority || '중간') === p; });
       var doneP = ofP.filter(function(s){ return s.progress === 100; }).length;
-      document.getElementById(ids[i]).textContent = doneP + '/' + ofP.length;
+      document.getElementById(fracIds[i]).textContent = doneP + '/' + ofP.length;
+      document.getElementById(barIds[i]).style.height = (ofP.length ? Math.round(doneP / ofP.length * 100) : 0) + '%';
     });
   }
 
