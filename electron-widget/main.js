@@ -285,8 +285,10 @@ app.whenReady().then(() => {
     }
   });
 
-  // 비상 단축키: 위젯과는 무관하게, 열려있는 카카오톡 창만 전부 숨기거나 복원함
-  globalShortcut.register('CommandOrControl+Alt+K', () => {
+  // 비상 단축키: 위젯과는 무관하게, 열려있는 카카오톡 창만 전부 숨기거나 복원함.
+  // 급할 때 여러 키를 조합해서 누르기 힘드니 F9 하나만 - 숫자/문자 키를 단독으로
+  // 전역 단축키로 쓰면 평소 타이핑(문서, 카톡 대화 등)까지 다 막혀버려서 안 됨.
+  globalShortcut.register('F9', () => {
     const proc = kakaoProcessName();
     if (!kakaoAllHidden) {
       runWinHelper(['-Action', 'MinimizeAllByProcess', '-Process', proc]);
