@@ -2060,6 +2060,17 @@
     }
     var editing = false;
 
+    // 패널이 옮기거나 크기를 바꾸다가, 혹은 다른 화면 크기의 컴퓨터에서 저장된
+    // 위치를 불러오다가 보드 밖으로 나가 "사라지는" 일이 없도록, 최종 위치/크기를
+    // 항상 지금 보드 안에 완전히 들어오게 강제함.
+    function fitToBoard(left, top, w, h, bx){
+      w = Math.min(w, bx.width);
+      h = Math.min(h, bx.height);
+      left = Math.max(0, Math.min(left, bx.width - w));
+      top = Math.max(0, Math.min(top, bx.height - h));
+      return { left: left, top: top, w: w, h: h };
+    }
+
     function applySaved(){
       var rect = board.getBoundingClientRect();
       PANEL_IDS.forEach(function(id){
@@ -2067,10 +2078,13 @@
         if(!pos) return;
         var el = document.getElementById(id);
         el.classList.add('placed');
-        el.style.left = (pos.xPct / 100 * rect.width) + 'px';
-        el.style.top = (pos.yPct / 100 * rect.height) + 'px';
-        el.style.width = (pos.wPct / 100 * rect.width) + 'px';
-        if(pos.hPct) el.style.height = (pos.hPct / 100 * rect.height) + 'px';
+        var w = pos.wPct / 100 * rect.width;
+        var h = pos.hPct ? pos.hPct / 100 * rect.height : (el.getBoundingClientRect().height || 200);
+        var fit = fitToBoard(pos.xPct / 100 * rect.width, pos.yPct / 100 * rect.height, w, h, rect);
+        el.style.left = fit.left + 'px';
+        el.style.top = fit.top + 'px';
+        el.style.width = fit.w + 'px';
+        if(pos.hPct) el.style.height = fit.h + 'px';
       });
     }
 
@@ -2102,17 +2116,19 @@
       var startRect = panelEl.getBoundingClientRect();
       var offX = e.clientX - startRect.left;
       var offY = e.clientY - startRect.top;
+      var w = startRect.width, h = startRect.height;
       panelEl.classList.add('placed', 'dragging');
-      panelEl.style.width = startRect.width + 'px';
+      panelEl.style.width = w + 'px';
       panelEl.style.left = (startRect.left - boardRect.left) + 'px';
       panelEl.style.top = (startRect.top - boardRect.top) + 'px';
 
       function onMove(ev){
         var bx = board.getBoundingClientRect();
-        var x = Math.max(0, Math.min(ev.clientX - bx.left - offX, bx.width - 60));
-        var y = Math.max(0, Math.min(ev.clientY - bx.top - offY, bx.height - 40));
-        panelEl.style.left = x + 'px';
-        panelEl.style.top = y + 'px';
+        // 패널 전체(가로/세로 실제 크기)가 항상 보드 안에 들어오게 제한 -
+        // 예전에는 60px/40px 고정값이라 대부분 화면 밖으로 밀려나갈 수 있었음.
+        var fit = fitToBoard(ev.clientX - bx.left - offX, ev.clientY - bx.top - offY, w, h, bx);
+        panelEl.style.left = fit.left + 'px';
+        panelEl.style.top = fit.top + 'px';
       }
       function onUp(){
         document.removeEventListener('mousemove', onMove);
@@ -2142,8 +2158,12 @@
         var bx = board.getBoundingClientRect();
         var left = parseFloat(panelEl.style.left) || 0;
         var top = parseFloat(panelEl.style.top) || 0;
-        var w = Math.max(200, Math.min(startW + (ev.clientX - startX), bx.width - left));
-        var h = Math.max(120, Math.min(startH + (ev.clientY - startY), bx.height - top));
+        // 보드 오른쪽/아래 끝을 절대 넘지 않게 먼저 제한한 다음, 그 안에서만
+        // 최소 크기(200x120)를 적용함 - 순서가 반대였으면(최소 크기를 나중에
+        // 강제하면) 남은 공간이 좁을 때 오히려 보드 밖으로 밀려나가 버림.
+        var maxW = bx.width - left, maxH = bx.height - top;
+        var w = Math.min(Math.max(200, startW + (ev.clientX - startX)), maxW);
+        var h = Math.min(Math.max(120, startH + (ev.clientY - startY)), maxH);
         panelEl.style.width = w + 'px';
         panelEl.style.height = h + 'px';
       }
