@@ -23,7 +23,11 @@
     --sun:#B06A56;
     --sat:#5C7A96;
     --warn:#B06A56;
+    --warn-soft:#F0DDD4;
     --gold:#A8895A;
+    --gold-soft:#EFE3D0;
+    --m0:#DCEEDC; --m1:#F6D9E6; --m2:#FBEFC2; --m3:#F7DCD3;
+    --m4:#E3D9F5; --m5:#D6EAF5; --m6:#D6F0EA; --m7:#FBE3C8;
     --shadow: 0 1px 6px rgba(20,60,45,0.12);
     --side-gap: 14px;
     color-scheme: light;
@@ -34,7 +38,9 @@
       --paper:#0E1512; --cell:#1A2420; --cell-alt:#1F2B25;
       --grid:#324339; --grid-strong:#48604F;
       --accent:#3FCE9A; --accent-ink:#0A1310; --accent-soft:#22392E;
-      --sun:#D98F76; --sat:#7B98B2; --warn:#D98F76; --gold:#C7AC7E;
+      --sun:#D98F76; --sat:#7B98B2; --warn:#D98F76; --warn-soft:#3A2A22; --gold:#C7AC7E; --gold-soft:#362E1E;
+      --m0:#22392E; --m1:#3A2530; --m2:#3A3320; --m3:#3A2A22;
+      --m4:#2A2438; --m5:#22303A; --m6:#1F3530; --m7:#362E1E;
       --shadow: 0 1px 8px rgba(0,0,0,0.4);
     }
   }
@@ -43,7 +49,9 @@
     --paper:#0E1512; --cell:#1A2420; --cell-alt:#1F2B25;
     --grid:#324339; --grid-strong:#48604F;
     --accent:#3FCE9A; --accent-ink:#0A1310; --accent-soft:#22392E;
-    --sun:#D98F76; --sat:#7B98B2; --warn:#D98F76; --gold:#C7AC7E;
+    --sun:#D98F76; --sat:#7B98B2; --warn:#D98F76; --warn-soft:#3A2A22; --gold:#C7AC7E; --gold-soft:#362E1E;
+    --m0:#22392E; --m1:#3A2530; --m2:#3A3320; --m3:#3A2A22;
+    --m4:#2A2438; --m5:#22303A; --m6:#1F3530; --m7:#362E1E;
     --shadow: 0 1px 8px rgba(0,0,0,0.4);
   }
 
@@ -197,6 +205,18 @@
   .progress-row .bar i{ display:block; height:100%; background:var(--accent); border-radius:6px; transition:width .3s; }
   .progress-row .pct{ font-size:11px; color:var(--ink-soft); font-family:var(--mono); flex:none; }
 
+  .sched-dash{ margin-bottom:10px; display:flex; flex-direction:column; gap:6px; }
+  .dash-row{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .dash-chip{ font-size:11px; font-weight:600; padding:3px 8px; border-radius:10px; background:var(--cell-alt); color:var(--ink-soft); white-space:nowrap; display:inline-flex; align-items:center; gap:4px; }
+  .dash-chip b{ font-family:var(--mono); font-weight:700; }
+  .dash-chip.st-notstarted{ color:var(--ink-faint); }
+  .dash-chip.st-inprogress{ color:var(--gold); background:var(--gold-soft); }
+  .dash-chip.st-done{ color:var(--accent); background:var(--accent-soft); }
+  .dash-chip.pr-high{ color:var(--warn); background:var(--warn-soft); }
+  .dash-chip.pr-mid{ color:var(--gold); background:var(--gold-soft); }
+  .dash-chip.pr-low{ color:var(--accent); background:var(--accent-soft); }
+  .dash-rate{ margin-left:auto; font-size:11px; font-weight:700; color:var(--accent); font-family:var(--mono); }
+
   /* ---------- shared form controls ---------- */
   .add-row{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
   .add-row input[type=text], .add-row input[type=date], .add-row input[type=time], .add-row select{
@@ -266,6 +286,9 @@
   li.sched .meta{ display:flex; align-items:center; gap:5px; font-size:11px; color:var(--ink-faint); font-family:var(--mono); margin-top:2px; }
   li.sched .meta .rep{ background:var(--accent-soft); color:var(--accent); border-radius:8px; padding:0 5px; font-family:var(--ui); font-weight:600; }
   li.sched.done .txt{ color:var(--ink-faint); text-decoration:line-through; }
+  .sched-group ul.rows li.sched{ -webkit-app-region:no-drag; cursor:grab; }
+  .sched-group ul.rows li.sched.dragging{ opacity:0.4; cursor:grabbing; }
+  .sched-group ul.rows li.sched.drop-target{ box-shadow: inset 0 2px 0 var(--accent); }
   .progress-pill{ flex:none; border:1px solid var(--grid-strong); background:var(--cell); border-radius:11px; font-size:11px; padding:3px 8px; color:var(--ink-soft); white-space:nowrap; font-family:var(--mono); font-weight:600; min-width:38px; text-align:center; }
   li.sched[data-progress="0"] .progress-pill{ color:var(--ink-faint); }
   li.sched:not([data-progress="0"]):not([data-progress="100"]) .progress-pill{ background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
@@ -421,6 +444,33 @@
     padding:2px 5px; cursor:pointer;
   }
   .popover-close:hover{ color:var(--warn); }
+  .popover.popover-wide{ width:min(560px, 94vw); max-height:76vh; }
+
+  /* ---------- 만다라트: 9x9 만다라트 플래너 ---------- */
+  .mandala-hint{ font-size:11px; color:var(--ink-soft); line-height:1.5; margin:0 0 10px; }
+  .mandala-grid{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:6px; aspect-ratio:1/1; }
+  .m-block{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:2px; border-radius:8px; padding:2px; }
+  .m-cell{
+    width:100%; min-width:0; border:1px solid var(--grid); border-radius:4px;
+    background:var(--cell); color:var(--ink); font:inherit; font-size:10.5px; text-align:center;
+    padding:1px 2px; outline:none;
+  }
+  .m-cell::placeholder{ font-size:9px; color:var(--ink-faint); }
+  .m-cell:focus{ border-color:var(--accent); position:relative; z-index:1; }
+  .m-cell.m-core{ font-weight:800; font-size:12px; background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+  .m-cell.m-sub{ font-weight:700; }
+  .m-block.m-k0, .m-cell.m-k0{ background:var(--m0); }
+  .m-block.m-k1, .m-cell.m-k1{ background:var(--m1); }
+  .m-block.m-k2, .m-cell.m-k2{ background:var(--m2); }
+  .m-block.m-k3, .m-cell.m-k3{ background:var(--m3); }
+  .m-block.m-k4, .m-cell.m-k4{ background:var(--m4); }
+  .m-block.m-k5, .m-cell.m-k5{ background:var(--m5); }
+  .m-block.m-k6, .m-cell.m-k6{ background:var(--m6); }
+  .m-block.m-k7, .m-cell.m-k7{ background:var(--m7); }
+  .m-block.m-k0 .m-cell, .m-block.m-k1 .m-cell, .m-block.m-k2 .m-cell, .m-block.m-k3 .m-cell,
+  .m-block.m-k4 .m-cell, .m-block.m-k5 .m-cell, .m-block.m-k6 .m-cell, .m-block.m-k7 .m-cell{ background:transparent; }
+  .mandala-reset-btn{ margin-top:12px; width:100%; border:1px dashed var(--grid-strong); background:none; color:var(--ink-faint); border-radius:10px; padding:7px; font:inherit; font-size:12px; cursor:pointer; }
+  .mandala-reset-btn:hover{ border-color:var(--warn); color:var(--warn); }
 
   .modal-back{ position:fixed; inset:0; background:rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; padding:20px; z-index:20; }
   .modal-back.open{ display:flex; }
@@ -553,6 +603,19 @@
           <div class="bar"><i id="schedBar" style="width:0%"></i></div>
           <span class="pct" id="schedPct">0/0 완료</span>
         </div>
+        <div class="sched-dash" id="schedDash">
+          <div class="dash-row">
+            <span class="dash-chip st-notstarted"><b id="dashNotStarted">0</b>시작전</span>
+            <span class="dash-chip st-inprogress"><b id="dashInProgress">0</b>진행중</span>
+            <span class="dash-chip st-done"><b id="dashDone">0</b>완료</span>
+            <span class="dash-rate" id="dashRate">완료율 0%</span>
+          </div>
+          <div class="dash-row">
+            <span class="dash-chip pr-high">높음 <b id="dashHigh">0/0</b></span>
+            <span class="dash-chip pr-mid">중간 <b id="dashMid">0/0</b></span>
+            <span class="dash-chip pr-low">낮음 <b id="dashLow">0/0</b></span>
+          </div>
+        </div>
         <div class="sched-filter" id="schedFilter" hidden>
           <span id="schedFilterLabel"></span>
           <button id="schedFilterClear">전체보기</button>
@@ -677,6 +740,18 @@
   </div>
 </div>
 
+<div class="popover popover-wide" id="popover-mandala">
+  <div class="panel-head">
+    <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>만다라트</h2>
+    <button class="popover-close" aria-label="닫기" data-close-popover>×</button>
+  </div>
+  <div class="panel-body">
+    <p class="mandala-hint">가운데 칸에 핵심 목표를 적으면, 그 둘레 8칸이 세부 목표가 되고 바깥 8개 칸에도 자동으로 똑같이 나와요. 바깥 칸을 채워서 각 세부 목표의 실천 항목을 8개씩 적어보세요.</p>
+    <div class="mandala-grid" id="mandalaGrid"></div>
+    <button id="mandalaReset" class="ghost mandala-reset-btn" type="button">전체 지우기</button>
+  </div>
+</div>
+
 <div class="dock-wrap">
   <nav class="dock" aria-label="바로가기 독">
     <button data-goto="panel-cal"><span class="tip">달력</span>
@@ -702,6 +777,9 @@
     </button>
     <button data-goto="panel-ai"><span class="tip">AI 도우미</span>
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z"/></svg>
+    </button>
+    <button data-goto="panel-mandala"><span class="tip">만다라트</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
     </button>
     <button data-goto="dday-section"><span class="tip">D-Day</span>
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4"/><path d="M4 4h14l-3 4 3 4H4"/></svg>
@@ -733,6 +811,8 @@
     <p>퇴근할 때는 위젯 안에서 <b>Ctrl+Backspace</b>를 누르세요. 문서 폴더에 백업 파일을 하나 남기고 프로그램이 완전히 종료돼요.</p>
     <p>자료함의 <b>"이 컴퓨터의 파일 연결하기"</b>로 엑셀 파일처럼 자주 쓰는 특정 파일을 골라두면, 다음부터는 그 항목을 누르는 순간 그 파일이 평소 쓰던 프로그램(엑셀 등)으로 바로 열려요.</p>
     <p><b>할일</b> 제목 옆의 <b>📎 엑셀 연결</b>로 자주 쓰는 엑셀 파일 하나를 연결해두면, 그 제목을 누르거나 하단 독의 <b>할일</b> 아이콘을 눌렀을 때 바로 그 파일이 열려요. 연결을 없애려면 옆의 × 를 누르면 돼요.</p>
+    <p><b>할일</b> 패널 위쪽에는 시작전·진행중·완료 건수와 완료율, 높음·중간·낮음 우선순위별 완료 현황이 한눈에 보여요. 같은 사업(카테고리) 안에서는 항목을 마우스로 눌러 끌면 순서를 원하는 대로 바꿀 수 있어요.</p>
+    <p>하단 독의 <b>만다라트</b>를 누르면 목표 설계용 9x9 만다라트 판이 떠요. 가운데 칸에 핵심 목표를 적으면 둘레 8칸이 세부 목표가 되고, 그 세부 목표는 바깥 8개 블록에도 자동으로 똑같이 나와요 — 바깥 블록을 채워서 세부 목표마다 실천 항목을 8개씩 적어보세요.</p>
     <p>하단 독의 <b>톱니바퀴</b>를 누르면 편집 모드가 켜져요 — 각 칸의 위쪽 제목 줄을 눌러 끌면 위치가, 오른쪽 아래 모서리를 끌면 크기가 바뀌어요. 한 번 옮기면 이 컴퓨터에서는 계속 그 자리에 저장돼요.</p>
     <button id="modalClose">닫기</button>
   </div>
@@ -1049,6 +1129,25 @@
     document.getElementById('schedPct').textContent = '평균 ' + avg + '% (' + total + '건)';
   }
 
+  function renderSchedDashboard(){
+    var plain = schedule.filter(function(s){ return (s.repeat === 'none' || !s.repeat) && !isEvent(s); });
+    var total = plain.length;
+    var notStarted = plain.filter(function(s){ return !s.progress; }).length;
+    var done = plain.filter(function(s){ return s.progress === 100; }).length;
+    var inProgress = total - notStarted - done;
+    var rate = total ? Math.round(done / total * 100) : 0;
+    document.getElementById('dashNotStarted').textContent = notStarted;
+    document.getElementById('dashInProgress').textContent = inProgress;
+    document.getElementById('dashDone').textContent = done;
+    document.getElementById('dashRate').textContent = '완료율 ' + rate + '%';
+    ['높음','중간','낮음'].forEach(function(p, i){
+      var ids = ['dashHigh','dashMid','dashLow'];
+      var ofP = plain.filter(function(s){ return (s.priority || '중간') === p; });
+      var doneP = ofP.filter(function(s){ return s.progress === 100; }).length;
+      document.getElementById(ids[i]).textContent = doneP + '/' + ofP.length;
+    });
+  }
+
   function isEvent(item){ return !!item.time; }
 
   function buildSchedRow(item, matchedIso){
@@ -1099,6 +1198,41 @@
   }
 
   function eventSortKey(item){ return item.date + ' ' + (item.time || '99:99'); }
+
+  /* 사업(카테고리)별 목록 안에서 직접 끌어서 순서를 바꿀 수 있게: 순서를 한번도
+     바꾼 적 없으면 등록순(id)을 그대로 쓰고, 드래그로 옮기면 그 사업 안에서만
+     order 값을 다시 매긴다. */
+  function todoOrderKey(item){ return item.order != null ? item.order : item.id; }
+  function enableDragReorder(ul, items){
+    var draggedIdx = null;
+    Array.prototype.forEach.call(ul.children, function(li, idx){
+      if(!li.classList.contains('sched')) return;
+      li.draggable = true;
+      li.addEventListener('dragstart', function(e){
+        draggedIdx = idx;
+        li.classList.add('dragging');
+        if(e.dataTransfer){ e.dataTransfer.effectAllowed = 'move'; try{ e.dataTransfer.setData('text/plain', String(idx)); }catch(err){} }
+      });
+      li.addEventListener('dragend', function(){ li.classList.remove('dragging'); });
+      li.addEventListener('dragover', function(e){
+        e.preventDefault();
+        if(e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+        li.classList.add('drop-target');
+      });
+      li.addEventListener('dragleave', function(){ li.classList.remove('drop-target'); });
+      li.addEventListener('drop', function(e){
+        e.preventDefault();
+        li.classList.remove('drop-target');
+        if(draggedIdx === null || draggedIdx === idx) return;
+        var moved = items.splice(draggedIdx, 1)[0];
+        items.splice(idx, 0, moved);
+        items.forEach(function(it, i){ it.order = i; });
+        draggedIdx = null;
+        save('griddesk.schedule', schedule);
+        renderSched(); renderCal();
+      });
+    });
+  }
 
   function renderSched(){
     var flatUl = document.getElementById('schedList');
@@ -1153,7 +1287,7 @@
       } else {
         var order = [];
         var byProject = {};
-        todosOnly.slice().sort(function(a,b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }).forEach(function(item){
+        todosOnly.slice().sort(function(a,b){ return todoOrderKey(a) - todoOrderKey(b); }).forEach(function(item){
           var p = item.project || '개인';
           if(!byProject[p]){ byProject[p] = []; order.push(p); }
           byProject[p].push(item);
@@ -1174,6 +1308,7 @@
           items.forEach(function(item){ ul.appendChild(buildSchedRow(item)); });
           group.appendChild(head); group.appendChild(ul);
           groupsWrap.appendChild(group);
+          enableDragReorder(ul, items);
         });
       }
     }
@@ -1182,6 +1317,7 @@
     document.getElementById('eventCount').textContent = schedule.filter(isEvent).length + '건';
     renderSchedFilter();
     renderSchedProgress();
+    renderSchedDashboard();
   }
 
   function addTodo(){
@@ -1528,6 +1664,86 @@
   }
   renderTodoFileLink();
 
+  /* ---------- 만다라트: 9x9 만다라트 플래너 (핵심 목표 1 + 세부 목표 8 + 실천 항목 8x8) ---------- */
+  var MANDALA_POS = [0,1,2,3,5,6,7,8]; // 3x3 블록 안에서 가운데(4)를 뺀 8칸 - 세부목표 순서와 그대로 대응
+  function defaultMandala(){
+    return { core:'', subGoals:['','','','','','','',''], actions:[0,1,2,3,4,5,6,7].map(function(){ return ['','','','','','','','']; }) };
+  }
+  var mandala = load('griddesk.mandala', null);
+  if(!mandala || !Array.isArray(mandala.subGoals) || !Array.isArray(mandala.actions)){ mandala = defaultMandala(); }
+  function saveMandala(){ save('griddesk.mandala', mandala); }
+
+  function renderMandala(){
+    var grid = document.getElementById('mandalaGrid');
+    if(!grid) return;
+    grid.innerHTML = '';
+    var centerSubCell = new Array(8);
+    var mirrorSubCell = new Array(8);
+    for(var blockIdx = 0; blockIdx < 9; blockIdx++){
+      var blockEl = document.createElement('div');
+      blockEl.className = 'm-block' + (blockIdx === 4 ? ' m-center-block' : ' m-k' + MANDALA_POS.indexOf(blockIdx));
+      for(var cellIdx = 0; cellIdx < 9; cellIdx++){
+        var cell = document.createElement('input');
+        cell.type = 'text';
+        cell.className = 'm-cell';
+        if(blockIdx === 4 && cellIdx === 4){
+          cell.className += ' m-core';
+          cell.maxLength = 16;
+          cell.placeholder = '핵심 목표';
+          cell.value = mandala.core;
+          cell.addEventListener('input', function(){ mandala.core = this.value; saveMandala(); });
+        } else if(blockIdx === 4){
+          var k1 = MANDALA_POS.indexOf(cellIdx);
+          cell.className += ' m-sub m-k' + k1;
+          cell.maxLength = 16;
+          cell.placeholder = '목표';
+          cell.value = mandala.subGoals[k1];
+          centerSubCell[k1] = cell;
+        } else if(cellIdx === 4){
+          var k2 = MANDALA_POS.indexOf(blockIdx);
+          cell.className += ' m-sub m-sub-mirror';
+          cell.maxLength = 16;
+          cell.placeholder = '목표';
+          cell.value = mandala.subGoals[k2];
+          mirrorSubCell[k2] = cell;
+        } else {
+          let k3 = MANDALA_POS.indexOf(blockIdx);
+          let j = MANDALA_POS.indexOf(cellIdx);
+          cell.maxLength = 20;
+          cell.placeholder = '항목';
+          cell.value = mandala.actions[k3][j];
+          cell.addEventListener('input', function(){ mandala.actions[k3][j] = this.value; saveMandala(); });
+        }
+        blockEl.appendChild(cell);
+      }
+      grid.appendChild(blockEl);
+    }
+    // 가운데 블록의 세부 목표 칸과, 그 세부 목표가 자기 블록의 가운데 칸으로 다시
+    // 나오는 바깥 칸은 같은 값을 공유해요 - 어느 쪽에 적어도 서로 바로 반영돼요.
+    for(var k = 0; k < 8; k++){
+      (function(k){
+        centerSubCell[k].addEventListener('input', function(){
+          mandala.subGoals[k] = this.value; saveMandala();
+          mirrorSubCell[k].value = this.value;
+        });
+        mirrorSubCell[k].addEventListener('input', function(){
+          mandala.subGoals[k] = this.value; saveMandala();
+          centerSubCell[k].value = this.value;
+        });
+      })(k);
+    }
+  }
+  renderMandala();
+  var mandalaResetBtn = document.getElementById('mandalaReset');
+  if(mandalaResetBtn){
+    mandalaResetBtn.addEventListener('click', function(){
+      if(!confirm('만다라트 내용을 전부 지울까요?')) return;
+      mandala = defaultMandala();
+      saveMandala();
+      renderMandala();
+    });
+  }
+
   /* ---------- messaging / contacts ---------- */
   var msgBox = document.getElementById('msgTemplate');
   msgBox.value = load('griddesk.msgTemplate', '안녕하세요! 전해드릴 소식이 있어 연락드립니다 :)');
@@ -1657,7 +1873,8 @@
   var popovers = {
     'panel-material': document.getElementById('popover-material'),
     'panel-contact': document.getElementById('popover-contact'),
-    'panel-ai': document.getElementById('popover-ai')
+    'panel-ai': document.getElementById('popover-ai'),
+    'panel-mandala': document.getElementById('popover-mandala')
   };
   function closeAllPopovers(){
     Object.keys(popovers).forEach(function(k){ popovers[k].classList.remove('open'); });
@@ -1680,7 +1897,7 @@
     btn.addEventListener('click', function(){
       var id = btn.getAttribute('data-goto');
 
-      if(id === 'panel-material' || id === 'panel-contact' || id === 'panel-ai'){
+      if(id === 'panel-material' || id === 'panel-contact' || id === 'panel-ai' || id === 'panel-mandala'){
         var opened = togglePopover(id);
         if(opened && id === 'panel-material') document.getElementById('materialTitle').focus({preventScroll:true});
         if(opened && id === 'panel-contact') document.getElementById('contactName').focus({preventScroll:true});
