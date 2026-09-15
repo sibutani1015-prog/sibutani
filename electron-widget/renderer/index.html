@@ -91,6 +91,21 @@
   .head-dday .dday-add{ margin-bottom:0; flex:none; flex-wrap:nowrap; }
   .head-dday .dday-add input[type=text]{ flex:0 0 84px; }
   .head-dday .dday-add input[type=date]{ flex:0 0 116px; }
+  #ddayTicketToggle{
+    flex:none; border:1px solid var(--grid-strong); background:var(--cell-alt); color:var(--ink-soft);
+    border-radius:8px; font-size:13px; padding:0 8px; cursor:pointer;
+  }
+  #ddayTicketToggle.on{ background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
+  .dday-ticket-fields{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    margin-top:6px; padding-top:6px; border-top:1px dashed var(--grid);
+  }
+  .dday-ticket-fields input[type=url]{ flex:1 1 160px; min-width:0; }
+  .dday-ticket-fields label{ display:flex; align-items:center; gap:4px; font-size:11px; color:var(--ink-faint); flex:none; }
+  .dday-ticket-fields input, .dday-ticket-fields label{ font-family:var(--ui); }
+  .dday-ticket-fields input{
+    border:1px solid var(--grid); background:var(--cell-alt); border-radius:7px; padding:5px 7px; font-size:12px; color:var(--ink);
+  }
   ul.dday-list.horiz{
     flex-direction:row; flex-wrap:nowrap; flex:1; min-width:0;
     overflow-x:auto; scrollbar-width:none;
@@ -575,7 +590,14 @@
       <div class="dday-add">
         <input type="text" id="ddayName" placeholder="이름" maxlength="30">
         <input type="date" id="ddayDate">
+        <button id="ddayTicketToggle" type="button" title="예매 자동화 설정 (사이트 자동 열기·새로고침)">🎟</button>
         <button id="ddayAdd" hidden style="border:1px solid var(--grid-strong);background:var(--accent-soft);color:var(--accent);border-radius:12px;font-weight:600;padding:0 14px;">추가</button>
+      </div>
+      <div class="dday-ticket-fields" id="ddayTicketFields" hidden>
+        <input type="url" id="ddayUrl" placeholder="예매 사이트 주소 (https://...)">
+        <label>알림<input type="time" id="ddayNotifyAt"></label>
+        <label>열기<input type="time" step="1" id="ddayOpenAt"></label>
+        <label>새로고침<input type="time" step="1" id="ddayRefreshAt"></label>
       </div>
       <ul class="dday-list horiz" id="ddayList"></ul>
     </div>
@@ -1939,13 +1961,35 @@
     var dateInput = document.getElementById('ddayDate');
     var n = nameInput.value.trim(); var d = dateInput.value;
     if(!n || !d) return;
-    ddays.push({n:n, d:d}); save('griddesk.ddays', ddays);
+    var item = {n:n, d:d};
+    var urlInput = document.getElementById('ddayUrl');
+    var url = urlInput.value.trim();
+    if(url){
+      item.url = url;
+      var notifyAt = document.getElementById('ddayNotifyAt').value;
+      var openAt = document.getElementById('ddayOpenAt').value;
+      var refreshAt = document.getElementById('ddayRefreshAt').value;
+      if(notifyAt) item.notifyAt = notifyAt;
+      if(openAt) item.openAt = openAt;
+      if(refreshAt) item.refreshAt = refreshAt;
+      urlInput.value = '';
+      document.getElementById('ddayNotifyAt').value = '';
+      document.getElementById('ddayOpenAt').value = '';
+      document.getElementById('ddayRefreshAt').value = '';
+    }
+    ddays.push(item); save('griddesk.ddays', ddays);
     nameInput.value = ''; dateInput.value = '';
     renderDdays();
   }
   document.getElementById('ddayAdd').addEventListener('click', addDday);
   document.getElementById('ddayName').addEventListener('keydown', function(e){ if(e.key === 'Enter') addDday(); });
   document.getElementById('ddayDate').addEventListener('keydown', function(e){ if(e.key === 'Enter') addDday(); });
+  var ddayTicketToggle = document.getElementById('ddayTicketToggle');
+  var ddayTicketFields = document.getElementById('ddayTicketFields');
+  ddayTicketToggle.addEventListener('click', function(){
+    ddayTicketFields.hidden = !ddayTicketFields.hidden;
+    ddayTicketToggle.classList.toggle('on', !ddayTicketFields.hidden);
+  });
   renderDdays();
 
   /* ---------- 자료함 · 메시지 발송 팝업 (독 버튼으로 열고 닫음, 그리드를 차지하지 않음) ---------- */

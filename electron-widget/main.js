@@ -1,6 +1,8 @@
-const { app, BrowserWindow, Tray, Menu, screen, ipcMain, globalShortcut, nativeImage, dialog, shell } = require('electron');
+const { app, BrowserWindow, Tray, Menu, screen, ipcMain, globalShortcut, nativeImage, dialog, shell, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
+const { spawn } = require('child_process');
 const { pathToFileURL } = require('url');
 const XLSX = require('xlsx');
 
@@ -366,3 +368,81 @@ ipcMain.handle('link-excel-file', async () => {
 });
 
 ipcMain.on('unlink-excel-file', () => { watchExcelFile(null); });
+
+/* ---------- D-Day 예매 자동화: 정해둔 시각에 사이트 열기 + 새로고침 ----------
+   내 컴퓨터 시계가 몇 초 어긋나 있을 수 있어서, 표준시(HTTPS 서버 응답의 Date
+   헤더)로 한 번 보정값을 구해두고, 그 보정값을 더한 "진짜 시각" 기준으로 판단함. */
+let clockOffsetMs = 0;
+function syncClockOffset() {
+  try {
+    const req = https.request({ host: 'www.naver.com', method: 'HEAD', timeout: 5000 }, (res) => {
+      const serverDate = res.headers && res.headers.date ? new Date(res.headers.date) : null;
+      if (serverDate && !isNaN(serverDate.getTime())) {
+        clockOffsetMs = serverDate.getTime() - Date.now();
+      }
+      res.resume();
+    });
+    req.on('error', () => {});
+    req.on('timeout', () => req.destroy());
+    req.end();
+  } catch (e) {
+    // 오프라인이면 그냥 이 컴퓨터 시계를 그대로 씀
+  }
+}
+syncClockOffset();
+setInterval(syncClockOffset, 60 * 60 * 1000); // 한 시간마다 다시 보정
+
+function correctedNow() { return new Date(Date.now() + clockOffsetMs); }
+
+function refreshFrontWindow() {
+  // 그 순간 활성 창(포커스된 창)에 F5를 보냄 - 예매 사이트 탭이 맨 앞에 있어야 함
+  const ps = spawn('powershell.exe', [
+    '-NoProfile', '-Command',
+    "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{F5}')"
+  ], { windowsHide: true });
+  ps.on('error', () => {});
+}
+
+function notifyDday(title, body) {
+  if (!Notification.isSupported()) return;
+  new Notification({ title, body }).show();
+}
+
+const firedDdayActions = new Set();
+function targetDate(dateStr, timeStr) {
+  // timeStr: "HH:MM" 또는 "HH:MM:SS"
+  const d = new Date(dateStr + 'T' + (timeStr.length === 5 ? timeStr + ':00' : timeStr));
+  return isNaN(d.getTime()) ? null : d;
+}
+function checkDdayAutomations() {
+  const ddays = storeCache['griddesk.ddays'];
+  if (!Array.isArray(ddays)) return;
+  const now = correctedNow();
+  ddays.forEach((item) => {
+    if (!item || !item.url || !item.d) return;
+    [
+      ['notifyAt', 'notify'],
+      ['openAt', 'open'],
+      ['refreshAt', 'refresh']
+    ].forEach(([field, kind]) => {
+      const timeStr = item[field];
+      if (!timeStr) return;
+      const key = item.n + '|' + item.d + '|' + kind;
+      if (firedDdayActions.has(key)) return;
+      const target = targetDate(item.d, timeStr);
+      if (!target) return;
+      const diffMs = now.getTime() - target.getTime();
+      if (diffMs < 0 || diffMs > 60000) return; // 아직 안 됐거나, 1분 넘게 지난 건 건너뜀(놓친 것)
+      firedDdayActions.add(key);
+      if (kind === 'notify') {
+        notifyDday('D-Day 알림: ' + item.n, '예매 준비 시간이에요.');
+      } else if (kind === 'open') {
+        shell.openExternal(item.url);
+        notifyDday('사이트를 열었어요: ' + item.n, item.url);
+      } else if (kind === 'refresh') {
+        refreshFrontWindow();
+      }
+    });
+  });
+}
+setInterval(checkDdayAutomations, 1000);
