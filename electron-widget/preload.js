@@ -25,5 +25,9 @@ contextBridge.exposeInMainWorld('api', {
   exportBackup: (dataStr) => ipcRenderer.invoke('export-backup', dataStr),
 
   selectPhotoFolder: () => ipcRenderer.invoke('select-photo-folder'),
-  listPhotos: () => ipcRenderer.invoke('list-photos')
+  listPhotos: () => ipcRenderer.invoke('list-photos'),
+
+  // 자료함: 엑셀 파일 등 특정 파일을 골라서 연결해두고, 클릭하면 그 파일을 바로 엶.
+  selectMaterialFile: () => ipcRenderer.invoke('select-material-file'),
+  openPath: (filePath) => ipcRenderer.invoke('open-path', filePath)
 });

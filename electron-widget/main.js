@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, screen, ipcMain, globalShortcut, nativeImage, dialog } = require('electron');
+const { app, BrowserWindow, Tray, Menu, screen, ipcMain, globalShortcut, nativeImage, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
@@ -209,6 +209,21 @@ ipcMain.handle('export-backup', async (event, dataStr) => {
   if (res.canceled || !res.filePath) return { ok: false };
   fs.writeFileSync(res.filePath, dataStr, 'utf-8');
   return { ok: true, path: res.filePath };
+});
+
+/* ---------- IPC: 자료함 - 특정 파일(엑셀 등)을 연결해두고 바로 열기 ---------- */
+ipcMain.handle('select-material-file', async () => {
+  const res = await dialog.showOpenDialog(mainWindow, {
+    title: '자료함에 연결할 파일 선택',
+    properties: ['openFile']
+  });
+  if (res.canceled || !res.filePaths[0]) return null;
+  return res.filePaths[0];
+});
+
+ipcMain.handle('open-path', async (event, filePath) => {
+  const err = await shell.openPath(filePath);
+  return { ok: !err, error: err || null };
 });
 
 /* ---------- IPC: 휴식 카드용 사진 폴더 (인터넷 없이, 이 컴퓨터 안의 파일만) ---------- */

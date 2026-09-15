@@ -295,6 +295,11 @@
   li.material .pin-toggle.on{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
   li.material .pin-toggle.on svg{ fill:var(--accent); }
   li.material:hover .del{ opacity:1; }
+  li.material .mfile{ color:var(--accent); font-weight:600; display:flex; align-items:center; gap:5px; background:none; border:none; padding:0; font:inherit; cursor:pointer; text-align:left; }
+  li.material .mfile:hover{ text-decoration:underline; }
+  li.material .mfile svg{ width:12px; height:12px; stroke:currentColor; flex:none; }
+  .file-pick-btn{ display:block; width:100%; margin:8px 0 2px; padding:8px 10px; border:1px dashed var(--grid-strong); border-radius:10px; background:var(--cell-alt); color:var(--ink-soft); font:inherit; font-size:12px; cursor:pointer; text-align:center; }
+  .file-pick-btn:hover{ border-color:var(--accent); color:var(--accent); }
 
   .dock-pins{ display:flex; gap:2px; }
   .dock button.pin .letter{
@@ -635,6 +640,7 @@
       <input type="text" id="materialUrl" placeholder="주소(URL)" maxlength="200" style="flex:1 1 140px;">
       <button id="materialAdd" hidden>추가</button>
     </div>
+    <button id="materialFilePick" class="file-pick-btn" type="button">📎 이 컴퓨터의 파일 연결하기 (엑셀 등)</button>
     <ul class="rows" id="materialList"></ul>
   </div>
 </div>
@@ -719,6 +725,7 @@
     <p>학교용 위젯 프로그램의 짜임새를 참고해 만든 개인용 데스크톱 위젯이에요. 달력·일정·할일·자료함·메시지 발송·메모·AI 도우미·D-Day를 담았어요.</p>
     <p>빈 곳을 클릭하면 그 아래 바탕화면 아이콘이 그대로 눌려요. 화면 오른쪽 아래 트레이 아이콘을 오른쪽 클릭하면 새로고침·앞으로 보기·모니터 선택·시작 시 자동 실행·종료를 할 수 있어요. <b>Ctrl+Alt+D</b>를 누르면 위젯이 보이면 숨고, 숨어있으면 다시 보여요 — 독의 <b>잠깐 숨기기</b> 아이콘을 눌러도 똑같이 바로 숨길 수 있어요(잠금 없이).</p>
     <p>퇴근할 때는 위젯 안에서 <b>Ctrl+Backspace</b>를 누르세요. 문서 폴더에 백업 파일을 하나 남기고 프로그램이 완전히 종료돼요.</p>
+    <p>자료함의 <b>"이 컴퓨터의 파일 연결하기"</b>로 엑셀 파일처럼 자주 쓰는 특정 파일을 골라두면, 다음부터는 그 항목을 누르는 순간 그 파일이 평소 쓰던 프로그램(엑셀 등)으로 바로 열려요.</p>
     <p>하단 독의 <b>톱니바퀴</b>를 누르면 편집 모드가 켜져요 — 각 칸의 위쪽 제목 줄을 눌러 끌면 위치가, 오른쪽 아래 모서리를 끌면 크기가 바뀌어요. 한 번 옮기면 이 컴퓨터에서는 계속 그 자리에 저장돼요.</p>
     <button id="modalClose">닫기</button>
   </div>
@@ -1331,6 +1338,18 @@
   function hostOf(u){ try{ return new URL(normalizeUrl(u)).hostname; }catch(e){ return u; } }
   function pinnedCount(){ return materials.filter(function(m){ return m.pinned; }).length; }
 
+  function openMaterial(item){
+    if(item.filePath){
+      if(window.api && window.api.openPath){
+        window.api.openPath(item.filePath).then(function(res){
+          if(!res || !res.ok) alert('파일을 열 수 없어요. 파일이 옮겨졌거나 지워졌을 수 있어요.\n' + item.filePath);
+        });
+      }
+    } else {
+      window.open(normalizeUrl(item.url), '_blank', 'noopener');
+    }
+  }
+
   function renderDockPins(){
     var wrap = document.getElementById('dockPins');
     wrap.innerHTML = '';
@@ -1338,7 +1357,7 @@
       var btn = document.createElement('button');
       btn.className = 'pin';
       btn.innerHTML = '<span class="tip">' + item.title + '</span><span class="letter">' + (item.title.trim().charAt(0) || '?').toUpperCase() + '</span>';
-      btn.addEventListener('click', function(){ window.open(normalizeUrl(item.url), '_blank', 'noopener'); });
+      btn.addEventListener('click', function(){ openMaterial(item); });
       wrap.appendChild(btn);
     });
   }
@@ -1353,11 +1372,20 @@
     materials.forEach(function(item){
       var li = document.createElement('li'); li.className = 'material';
       var body = document.createElement('span'); body.className = 'body';
-      var a = document.createElement('a'); a.className = 'mtitle';
-      a.href = normalizeUrl(item.url); a.target = '_blank'; a.rel = 'noopener';
-      a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg>' + item.title;
-      var url = document.createElement('span'); url.className = 'url'; url.textContent = hostOf(item.url);
-      body.appendChild(a); body.appendChild(url);
+      var url = document.createElement('span'); url.className = 'url';
+      if(item.filePath){
+        var fileBtn = document.createElement('button'); fileBtn.type = 'button'; fileBtn.className = 'mfile';
+        fileBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a1.5 1.5 0 0 1-2.12-2.12l8.49-8.48"/></svg>' + item.title;
+        fileBtn.addEventListener('click', function(){ openMaterial(item); });
+        url.textContent = item.filePath;
+        body.appendChild(fileBtn); body.appendChild(url);
+      } else {
+        var a = document.createElement('a'); a.className = 'mtitle';
+        a.href = normalizeUrl(item.url); a.target = '_blank'; a.rel = 'noopener';
+        a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg>' + item.title;
+        url.textContent = hostOf(item.url);
+        body.appendChild(a); body.appendChild(url);
+      }
 
       var pin = document.createElement('button');
       pin.className = 'pin-toggle' + (item.pinned ? ' on' : '');
@@ -1396,6 +1424,26 @@
     save('griddesk.materials.nextId', materialNextId);
     titleInput.value = ''; urlInput.value = '';
     renderMaterials();
+  }
+
+  /* ---------- 자료함: 이 컴퓨터의 특정 파일(엑셀 등)을 연결해두고 클릭 한 번에 열기 ---------- */
+  var materialFilePick = document.getElementById('materialFilePick');
+  if(materialFilePick && window.api && window.api.selectMaterialFile){
+    materialFilePick.addEventListener('click', function(){
+      window.api.selectMaterialFile().then(function(filePath){
+        if(!filePath) return;
+        var titleInput = document.getElementById('materialTitle');
+        var typed = titleInput.value.trim();
+        var base = filePath.replace(/\\/g, '/').split('/').pop();
+        materials.push({id: materialNextId++, title: typed || base, filePath: filePath, pinned:false});
+        save('griddesk.materials', materials);
+        save('griddesk.materials.nextId', materialNextId);
+        titleInput.value = '';
+        renderMaterials();
+      });
+    });
+  } else if(materialFilePick){
+    materialFilePick.hidden = true;
   }
   renderMaterials();
 
