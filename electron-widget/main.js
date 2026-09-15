@@ -134,6 +134,8 @@ function createWindow() {
   }
   mainWindow.on('moved', saveBounds);
   mainWindow.on('resized', saveBounds);
+  mainWindow.on('moved', scheduleDockReposition);
+  mainWindow.on('resized', scheduleDockReposition);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -144,6 +146,7 @@ function bringToFront() {
   if (!mainWindow) return;
   mainWindow.show();
   mainWindow.focus();
+  restoreDockedWindow();
 }
 
 function buildTrayMenu() {
@@ -210,6 +213,56 @@ function buildTray() {
   buildTrayMenu();
 }
 
+/* ---------- 카톡 붙이기: 위젯을 옮기면 지정해둔 다른 프로그램(카카오톡 등)의
+   창도 오른쪽에 붙어서 같이 따라오고, Ctrl+Alt+D로 숨기면 그 창도 같이
+   최소화됨(옆에서 지나가는 사람이 못 보게). 우리 앱이 아닌 다른 프로그램의
+   창이라 Electron API로는 못 다루고, Windows API(user32.dll)를 쓰는
+   PowerShell 스크립트(scripts/winhelper.ps1)로 처리함 - robotjs 같은
+   네이티브 npm 모듈을 새로 빌드해야 하는 위험을 피하기 위함. ---------- */
+const WINHELPER_PATH = path.join(__dirname, 'scripts', 'winhelper.ps1');
+function runWinHelper(args) {
+  return new Promise((resolve) => {
+    try {
+      const ps = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', WINHELPER_PATH].concat(args), { windowsHide: true });
+      let out = '';
+      ps.stdout.on('data', (d) => { out += d.toString(); });
+      ps.on('close', () => {
+        try { resolve(JSON.parse(out.trim())); } catch (e) { resolve({ ok: false }); }
+      });
+      ps.on('error', () => resolve({ ok: false }));
+    } catch (e) {
+      resolve({ ok: false });
+    }
+  });
+}
+
+let dockRepositionTimer = null;
+function scheduleDockReposition() {
+  if (!configCache.dockEnabled || !configCache.dockTarget || !mainWindow) return;
+  clearTimeout(dockRepositionTimer);
+  dockRepositionTimer = setTimeout(() => {
+    if (!mainWindow) return;
+    const b = mainWindow.getBounds();
+    runWinHelper(['-Action', 'Move', '-Process', configCache.dockTarget.process, '-Title', configCache.dockTarget.title, '-X', String(b.x + b.width), '-Y', String(b.y)]);
+  }, 150);
+}
+
+function dockArgsIfAny() {
+  return (configCache.dockEnabled && configCache.dockTarget)
+    ? ['-Process', configCache.dockTarget.process, '-Title', configCache.dockTarget.title]
+    : null;
+}
+// 위젯을 숨기는/보이는 경로가 여러 개(Ctrl+Alt+D, 독의 잠깐 숨기기, 트레이 아이콘
+// 클릭, 트레이 메뉴)라서, 카톡 창도 항상 같이 최소화/복원되도록 한 곳에 모아둠.
+function minimizeDockedWindow() {
+  const args = dockArgsIfAny();
+  if (args) runWinHelper(['-Action', 'Minimize'].concat(args));
+}
+function restoreDockedWindow() {
+  const args = dockArgsIfAny();
+  if (args) runWinHelper(['-Action', 'Restore'].concat(args)).then(() => scheduleDockReposition());
+}
+
 app.whenReady().then(() => {
   createWindow();
   buildTray();
@@ -218,6 +271,7 @@ app.whenReady().then(() => {
     if (!mainWindow) return;
     if (mainWindow.isVisible()) {
       mainWindow.hide();
+      minimizeDockedWindow();
     } else {
       bringToFront();
     }
@@ -243,6 +297,7 @@ ipcMain.on('set-ignore-mouse-events', (event, ignore) => {
 ipcMain.on('hide-widget', () => {
   if (!mainWindow) return;
   mainWindow.hide();
+  minimizeDockedWindow();
 });
 
 /* ---------- IPC: 퇴근 전 한 번에 - 백업 저장하고 완전히 종료 ---------- */
@@ -443,6 +498,28 @@ ipcMain.handle('link-excel-file', async () => {
 });
 
 ipcMain.on('unlink-excel-file', () => { watchExcelFile(null); });
+
+/* ---------- IPC: 카톡 붙이기 ---------- */
+ipcMain.handle('pick-dock-window', async () => {
+  const res = await runWinHelper(['-Action', 'Pick']);
+  if (res && res.ok && res.title) {
+    configCache.dockTarget = { process: res.process, title: res.title };
+    configCache.dockEnabled = true;
+    writeConfig(configCache);
+    scheduleDockReposition();
+  }
+  return res;
+});
+
+ipcMain.on('unset-dock-window', () => {
+  configCache.dockTarget = null;
+  configCache.dockEnabled = false;
+  writeConfig(configCache);
+});
+
+ipcMain.handle('get-dock-status', () => {
+  return { enabled: !!(configCache.dockEnabled && configCache.dockTarget), title: configCache.dockTarget ? configCache.dockTarget.title : null };
+});
 
 /* ---------- D-Day 예매 자동화: 정해둔 시각에 사이트 열기 + 새로고침 ----------
    내 컴퓨터 시계가 몇 초 어긋나 있을 수 있어서, 표준시(HTTPS 서버 응답의 Date

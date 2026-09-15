@@ -28,6 +28,7 @@
       "preload.js",
       "renderer/**/*",
       "assets/**/*",
+      "scripts/**/*",
       "node_modules/**/*"
     ],
     "win": {

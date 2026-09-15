@@ -36,5 +36,11 @@ contextBridge.exposeInMainWorld('api', {
   linkExcelFile: () => ipcRenderer.invoke('link-excel-file'),
   unlinkExcelFile: () => ipcRenderer.send('unlink-excel-file'),
   readExcelProjects: (filePath) => ipcRenderer.invoke('read-excel-projects', filePath),
-  onExcelFileChanged: (callback) => ipcRenderer.on('excel-file-changed', callback)
+  onExcelFileChanged: (callback) => ipcRenderer.on('excel-file-changed', callback),
+
+  // 카톡 붙이기: 위젯을 옮기면 지정해둔 카카오톡(또는 다른 프로그램) 창도
+  // 오른쪽에 붙어서 같이 따라오고, Ctrl+Alt+D로 숨기면 같이 최소화됨.
+  pickDockWindow: () => ipcRenderer.invoke('pick-dock-window'),
+  unsetDockWindow: () => ipcRenderer.send('unset-dock-window'),
+  getDockStatus: () => ipcRenderer.invoke('get-dock-status')
 });
