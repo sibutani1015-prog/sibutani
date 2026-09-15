@@ -10,6 +10,9 @@
   },
   "author": "",
   "license": "UNLICENSED",
+  "dependencies": {
+    "xlsx": "^0.18.5"
+  },
   "devDependencies": {
     "electron": "^32.0.0",
     "electron-builder": "^25.0.0"
@@ -24,7 +27,8 @@
       "main.js",
       "preload.js",
       "renderer/**/*",
-      "assets/**/*"
+      "assets/**/*",
+      "node_modules/**/*"
     ],
     "win": {
       "target": "nsis",

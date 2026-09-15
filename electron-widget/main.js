@@ -2,6 +2,7 @@ const { app, BrowserWindow, Tray, Menu, screen, ipcMain, globalShortcut, nativeI
 const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
+const XLSX = require('xlsx');
 
 const STORE_PATH = path.join(app.getPath('userData'), 'griddesk-store.json');
 
@@ -153,6 +154,10 @@ app.whenReady().then(() => {
       bringToFront();
     }
   });
+
+  // 이전에 연결해둔 프로젝트 엑셀 파일이 있으면, 재시작 후에도 계속 감시를 이어감
+  const linkedExcel = storeCache['griddesk.todoLinkedFile'];
+  if (linkedExcel) watchExcelFile(linkedExcel);
 });
 
 // This is a background widget: closing the window (if that ever happens)
@@ -251,3 +256,103 @@ ipcMain.handle('list-photos', async () => {
     return { folder: dir, files: [] };
   }
 });
+
+/* ---------- IPC: 할일 - 프로젝트 엑셀 파일을 연결해두면, 그 안의 "프로젝트" 시트를
+   읽어서 할일 대시보드에 그대로 보여줌. 파일을 여는 게 아니라 데이터만 읽어옴,
+   저장할 때마다(fs.watch) 자동으로 다시 읽어서 항상 최신 상태를 유지함. ---------- */
+const PROJECT_SHEET_NAME = '프로젝트';
+const PROJECT_HEADER_ROW = 10; // 프로젝트 시트에서 표 헤더가 있는 행 번호(1-based)
+const PRIORITY_LABEL = { 1: '높음', 2: '중간', 3: '낮음' };
+
+function todayIsoMain() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function parseExcelProjects(filePath) {
+  const wb = XLSX.readFile(filePath, { cellDates: true });
+  const ws = wb.Sheets[PROJECT_SHEET_NAME];
+  if (!ws) return { ok: false, error: '"프로젝트" 시트를 찾을 수 없어요.' };
+
+  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+  const items = [];
+  let currentProject = '개인';
+  let nextId = 1;
+
+  function cellVal(col, row) {
+    const cell = ws[col + row];
+    return cell ? cell.v : undefined;
+  }
+  function toIso(d) {
+    if (!(d instanceof Date) || isNaN(d.getTime())) return null;
+    const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
+  for (let r = PROJECT_HEADER_ROW + 1; r <= range.e.r + 1; r++) {
+    const star = cellVal('B', r);
+    const name = cellVal('C', r);
+    if (name === undefined || String(name).trim() === '') continue;
+
+    if (String(star || '').trim() === '*') {
+      currentProject = String(name).trim();
+      continue; // 프로젝트 헤더 행은 목록에 넣지 않고, 사업별 그룹 이름으로만 사용
+    }
+
+    const pri = cellVal('D', r);
+    const endDate = toIso(cellVal('F', r));
+    const rawProgress = cellVal('I', r);
+    const progress = (typeof rawProgress === 'number') ? Math.round(rawProgress * 100) : 0;
+
+    items.push({
+      id: 'xlsx-' + (nextId++),
+      title: String(name).trim(),
+      date: endDate || todayIsoMain(),
+      project: currentProject,
+      priority: PRIORITY_LABEL[pri] || '중간',
+      progress: progress,
+      repeat: 'none',
+      _fromExcel: true
+    });
+  }
+  return { ok: true, items: items };
+}
+
+ipcMain.handle('read-excel-projects', async (event, filePath) => {
+  try {
+    if (!filePath || !fs.existsSync(filePath)) return { ok: false, error: '파일을 찾을 수 없어요.' };
+    return parseExcelProjects(filePath);
+  } catch (e) {
+    return { ok: false, error: String((e && e.message) || e) };
+  }
+});
+
+let excelWatcher = null;
+function watchExcelFile(filePath) {
+  if (excelWatcher) { try { excelWatcher.close(); } catch (e) {} excelWatcher = null; }
+  if (!filePath) return;
+  try {
+    let debounceTimer = null;
+    excelWatcher = fs.watch(filePath, { persistent: false }, () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        if (mainWindow) mainWindow.webContents.send('excel-file-changed');
+      }, 500);
+    });
+  } catch (e) {
+    // 저장 중 파일이 잠깐 사라졌다 생기는 경우 등은 조용히 무시 (다음 연결/재시작 시 다시 감시)
+  }
+}
+
+ipcMain.handle('link-excel-file', async () => {
+  const res = await dialog.showOpenDialog(mainWindow, {
+    title: '프로젝트 엑셀 파일 연결',
+    properties: ['openFile'],
+    filters: [{ name: 'Excel', extensions: ['xlsx'] }]
+  });
+  if (res.canceled || !res.filePaths[0]) return null;
+  watchExcelFile(res.filePaths[0]);
+  return res.filePaths[0];
+});
+
+ipcMain.on('unlink-excel-file', () => { watchExcelFile(null); });

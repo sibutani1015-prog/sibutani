@@ -631,7 +631,7 @@
 
     <section class="panel ga-todo" id="panel-todo">
       <div class="panel-head">
-        <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>할일<span class="head-file-link" id="todoFileLinkWrap" hidden><button id="todoFileOpen" class="file-link-btn" type="button"></button><button id="todoFileUnlink" class="file-unlink-btn" type="button" aria-label="연결 해제" title="연결 해제">×</button></span><button id="todoFileSet" class="file-link-set-btn" type="button" title="엑셀 파일 연결하기 - 연결해두면 이 제목이나 독의 할일 아이콘을 눌렀을 때 바로 열려요">📎 엑셀 연결</button></h2>
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>할일<span class="head-file-link" id="todoFileLinkWrap" hidden><button id="todoFileOpen" class="file-link-btn" type="button"></button><button id="todoFileUnlink" class="file-unlink-btn" type="button" aria-label="연결 해제" title="연결 해제">×</button></span><button id="todoFileSet" class="file-link-set-btn" type="button" title="프로젝트 엑셀 파일 연결하기 - 연결하면 그 안의 데이터를 그대로 읽어와 보여주고, 저장할 때마다 자동으로 갱신돼요">📎 엑셀 연결</button></h2>
         <span class="count" id="schedCount">0건</span>
       </div>
       <div class="panel-body">
@@ -675,7 +675,7 @@
           <span id="schedFilterLabel"></span>
           <button id="schedFilterClear">전체보기</button>
         </div>
-        <div class="add-row">
+        <div class="add-row" id="todoAddRow">
           <input type="date" id="todoDate">
           <input type="text" id="todoProject" list="projectList" placeholder="사업명" maxlength="30" style="flex:1 1 70px;">
           <datalist id="projectList"></datalist>
@@ -686,6 +686,7 @@
           <input type="text" id="todoTitle" placeholder="제목을 입력하고 Enter" maxlength="60">
           <button id="todoAdd" hidden>추가</button>
         </div>
+        <p class="empty-hint" id="todoExcelHint" hidden style="margin:0 0 10px;">엑셀에 연결된 상태예요 — 업무 추가/수정은 엑셀에서 하시면 저장할 때마다 자동으로 반영돼요.</p>
         <div id="schedGroups"></div>
         <ul class="rows" id="schedList"></ul>
       </div>
@@ -1179,7 +1180,7 @@
   }
 
   function renderSchedProgress(){
-    var plain = schedule.filter(function(s){ return (s.repeat === 'none' || !s.repeat) && !isEvent(s); });
+    var plain = activeTodos().filter(function(s){ return (s.repeat === 'none' || !s.repeat) && !isEvent(s); });
     var total = plain.length;
     var avg = total ? Math.round(plain.reduce(function(sum,s){ return sum + (s.progress||0); }, 0) / total) : 0;
     document.getElementById('schedBar').style.width = avg + '%';
@@ -1188,7 +1189,7 @@
 
   var DONUT_CIRC = 2 * Math.PI * 15.9155; // r=15.9155 → 둘레가 딱 100이 되도록 맞춘 값
   function renderSchedDashboard(){
-    var plain = schedule.filter(function(s){ return (s.repeat === 'none' || !s.repeat) && !isEvent(s); });
+    var plain = activeTodos().filter(function(s){ return (s.repeat === 'none' || !s.repeat) && !isEvent(s); });
     var total = plain.length;
     var notStarted = plain.filter(function(s){ return !s.progress; }).length;
     var done = plain.filter(function(s){ return s.progress === 100; }).length;
@@ -1239,23 +1240,30 @@
       var pill = document.createElement('button');
       pill.className = 'progress-pill';
       pill.textContent = (item.progress || 0) + '%';
-      pill.addEventListener('click', function(){
-        var idx = PROGRESS_STEPS.indexOf(item.progress || 0);
-        item.progress = PROGRESS_STEPS[(idx + 1) % PROGRESS_STEPS.length];
-        save('griddesk.schedule', schedule);
-        renderSched(); renderCal();
-      });
+      if(!item._fromExcel){
+        pill.addEventListener('click', function(){
+          var idx = PROGRESS_STEPS.indexOf(item.progress || 0);
+          item.progress = PROGRESS_STEPS[(idx + 1) % PROGRESS_STEPS.length];
+          save('griddesk.schedule', schedule);
+          renderSched(); renderCal();
+        });
+      } else {
+        pill.disabled = true;
+        pill.title = '엑셀에서 진행률을 수정하세요';
+      }
       li.appendChild(pill);
     }
 
-    var del = document.createElement('button');
-    del.className = 'del'; del.setAttribute('aria-label','삭제'); del.textContent = '×';
-    del.addEventListener('click', function(){
-      schedule = schedule.filter(function(s){ return s.id !== item.id; });
-      save('griddesk.schedule', schedule);
-      renderSched(); renderCal();
-    });
-    li.appendChild(del);
+    if(!item._fromExcel){
+      var del = document.createElement('button');
+      del.className = 'del'; del.setAttribute('aria-label','삭제'); del.textContent = '×';
+      del.addEventListener('click', function(){
+        schedule = schedule.filter(function(s){ return s.id !== item.id; });
+        save('griddesk.schedule', schedule);
+        renderSched(); renderCal();
+      });
+      li.appendChild(del);
+    }
     return li;
   }
 
@@ -1312,9 +1320,9 @@
 
     if(selectedDate){
       groupsWrap.hidden = true; flatUl.hidden = false;
-      var list = schedule.filter(function(s){ return occursOn(s, selectedDate); });
-      var dayEvents = list.filter(isEvent).sort(function(a,b){ return eventSortKey(a) < eventSortKey(b) ? -1 : 1; });
-      var dayTodos = list.filter(function(s){ return !isEvent(s); });
+      var dayEvents = schedule.filter(isEvent).filter(function(s){ return occursOn(s, selectedDate); })
+        .sort(function(a,b){ return eventSortKey(a) < eventSortKey(b) ? -1 : 1; });
+      var dayTodos = activeTodos().filter(function(s){ return occursOn(s, selectedDate); });
 
       if(dayEvents.length === 0){
         var eHint = document.createElement('li');
@@ -1343,13 +1351,14 @@
       }
       allEvents.forEach(function(item){ eventsUl.appendChild(buildSchedRow(item)); });
 
-      var todosOnly = schedule.filter(function(s){ return !isEvent(s); });
+      var todosOnly = activeTodos();
       if(todosOnly.length === 0){
         groupsWrap.innerHTML = '<p class="empty-hint">등록된 할일이 없어요.</p>';
       } else {
         var order = [];
         var byProject = {};
-        todosOnly.slice().sort(function(a,b){ return todoOrderKey(a) - todoOrderKey(b); }).forEach(function(item){
+        var sortedTodos = excelProjects ? todosOnly.slice() : todosOnly.slice().sort(function(a,b){ return todoOrderKey(a) - todoOrderKey(b); });
+        sortedTodos.forEach(function(item){
           var p = item.project || '개인';
           if(!byProject[p]){ byProject[p] = []; order.push(p); }
           byProject[p].push(item);
@@ -1370,12 +1379,12 @@
           items.forEach(function(item){ ul.appendChild(buildSchedRow(item)); });
           group.appendChild(head); group.appendChild(ul);
           groupsWrap.appendChild(group);
-          enableDragReorder(ul, items);
+          if(!excelProjects) enableDragReorder(ul, items);
         });
       }
     }
 
-    document.getElementById('schedCount').textContent = schedule.filter(function(s){ return !isEvent(s); }).length + '건';
+    document.getElementById('schedCount').textContent = activeTodos().length + '건';
     document.getElementById('eventCount').textContent = schedule.filter(isEvent).length + '건';
     renderSchedFilter();
     renderSchedProgress();
@@ -1671,60 +1680,84 @@
   }
   renderMaterials();
 
-  /* ---------- 할일: 엑셀 파일 하나를 연결해두면 제목 옆 버튼이나 독의 할일
-     아이콘을 눌렀을 때 그 파일이 바로 열림 ---------- */
+  /* ---------- 할일: 프로젝트 엑셀 파일을 연결해두면, 그 안의 "프로젝트" 시트를
+     읽어서 할일 대시보드/목록에 그대로 보여줌 (파일을 여는 게 아니라 데이터만
+     읽어옴). 엑셀을 저장할 때마다 자동으로 다시 읽어서 갱신됨. ---------- */
   var todoLinkedFile = load('griddesk.todoLinkedFile', null);
+  var excelProjects = null; // null이면 수동 입력한 schedule을 그대로 사용
   var todoFileSetBtn = document.getElementById('todoFileSet');
   var todoFileLinkWrap = document.getElementById('todoFileLinkWrap');
   var todoFileOpenBtn = document.getElementById('todoFileOpen');
   var todoFileUnlinkBtn = document.getElementById('todoFileUnlink');
+  var todoAddRow = document.getElementById('todoAddRow');
+  var todoExcelHint = document.getElementById('todoExcelHint');
+
+  function activeTodos(){
+    return excelProjects || schedule.filter(function(s){ return !isEvent(s); });
+  }
 
   function renderTodoFileLink(){
     if(!todoFileSetBtn) return;
     if(todoLinkedFile){
       var base = todoLinkedFile.replace(/\\/g, '/').split('/').pop();
       todoFileOpenBtn.textContent = '📎 ' + base;
-      todoFileOpenBtn.title = todoLinkedFile;
+      todoFileOpenBtn.title = '눌러서 다시 읽기 · ' + todoLinkedFile;
       todoFileLinkWrap.hidden = false;
       todoFileSetBtn.hidden = true;
     } else {
       todoFileLinkWrap.hidden = true;
       todoFileSetBtn.hidden = false;
     }
+    if(todoAddRow) todoAddRow.hidden = !!todoLinkedFile;
+    if(todoExcelHint) todoExcelHint.hidden = !todoLinkedFile;
   }
-  function openTodoLinkedFile(){
-    if(!todoLinkedFile || !(window.api && window.api.openPath)) return;
-    window.api.openPath(todoLinkedFile).then(function(res){
-      if(!res || !res.ok) alert('파일을 열 수 없어요. 파일이 옮겨졌거나 지워졌을 수 있어요.\n' + todoLinkedFile);
+
+  function loadExcelData(){
+    if(!todoLinkedFile || !(window.api && window.api.readExcelProjects)) return;
+    window.api.readExcelProjects(todoLinkedFile).then(function(res){
+      if(res && res.ok){
+        excelProjects = res.items;
+      } else {
+        console.warn('엑셀 읽기 실패:', res && res.error);
+        // 실패하면 마지막으로 성공했던 상태를 그대로 유지 (일시적 저장 중 잠금 등 대비)
+      }
+      renderSched(); renderCal();
     });
   }
-  if(window.api && window.api.selectMaterialFile){
+
+  if(window.api && window.api.linkExcelFile){
     if(todoFileSetBtn){
       todoFileSetBtn.addEventListener('click', function(e){
         e.stopPropagation();
-        window.api.selectMaterialFile().then(function(filePath){
+        window.api.linkExcelFile().then(function(filePath){
           if(!filePath) return;
           todoLinkedFile = filePath;
           save('griddesk.todoLinkedFile', todoLinkedFile);
           renderTodoFileLink();
+          loadExcelData();
         });
       });
     }
     if(todoFileOpenBtn){
-      todoFileOpenBtn.addEventListener('click', function(e){ e.stopPropagation(); openTodoLinkedFile(); });
+      todoFileOpenBtn.addEventListener('click', function(e){ e.stopPropagation(); loadExcelData(); });
     }
     if(todoFileUnlinkBtn){
       todoFileUnlinkBtn.addEventListener('click', function(e){
         e.stopPropagation();
         todoLinkedFile = null;
+        excelProjects = null;
         save('griddesk.todoLinkedFile', todoLinkedFile);
+        if(window.api.unlinkExcelFile) window.api.unlinkExcelFile();
         renderTodoFileLink();
+        renderSched(); renderCal();
       });
     }
+    if(window.api.onExcelFileChanged) window.api.onExcelFileChanged(function(){ loadExcelData(); });
   } else if(todoFileSetBtn){
     todoFileSetBtn.hidden = true;
   }
   renderTodoFileLink();
+  loadExcelData(); // 이전에 연결해둔 파일이 있으면 시작할 때 바로 한 번 읽어옴
 
   /* ---------- 만다라트: 9x9 만다라트 플래너 (핵심 목표 1 + 세부 목표 8 + 실천 항목 8x8) ---------- */
   var MANDALA_POS = [0,1,2,3,5,6,7,8]; // 3x3 블록 안에서 가운데(4)를 뺀 8칸 - 세부목표 순서와 그대로 대응

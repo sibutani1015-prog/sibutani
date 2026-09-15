@@ -29,5 +29,12 @@ contextBridge.exposeInMainWorld('api', {
 
   // 자료함: 엑셀 파일 등 특정 파일을 골라서 연결해두고, 클릭하면 그 파일을 바로 엶.
   selectMaterialFile: () => ipcRenderer.invoke('select-material-file'),
-  openPath: (filePath) => ipcRenderer.invoke('open-path', filePath)
+  openPath: (filePath) => ipcRenderer.invoke('open-path', filePath),
+
+  // 할일: 프로젝트 엑셀 파일을 연결해두면, 파일을 열지 않고 "프로젝트" 시트 데이터를
+  // 그대로 읽어와 할일 대시보드에 보여줌. 저장할 때마다 자동으로 갱신됨.
+  linkExcelFile: () => ipcRenderer.invoke('link-excel-file'),
+  unlinkExcelFile: () => ipcRenderer.send('unlink-excel-file'),
+  readExcelProjects: (filePath) => ipcRenderer.invoke('read-excel-projects', filePath),
+  onExcelFileChanged: (callback) => ipcRenderer.on('excel-file-changed', callback)
 });
