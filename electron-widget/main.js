@@ -27,6 +27,58 @@ let storeCache = readStore();
 let mainWindow = null;
 let tray = null;
 
+/* ---------- 외장하드로 자동 동기화 ----------
+   griddesk-store.json(실제 데이터)과는 별도로, "어느 폴더에 동기화할지"만 이
+   컴퓨터에 로컬로 저장해둠 - 이 설정 자체는 컴퓨터마다 다를 수 있어서(드라이브
+   문자가 다를 수 있음) 동기화 대상에서 제외함. */
+const CONFIG_PATH = path.join(app.getPath('userData'), 'griddesk-config.json');
+function readConfig() {
+  try { return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8')); } catch (e) { return {}; }
+}
+function writeConfig(data) {
+  try { fs.writeFileSync(CONFIG_PATH, JSON.stringify(data, null, 2), 'utf-8'); } catch (e) {}
+}
+let configCache = readConfig();
+
+function syncFilePath() {
+  if (!configCache.syncFolder) return null;
+  return path.join(configCache.syncFolder, 'griddesk-sync.json');
+}
+
+// 퇴근 전 한 번에(저장 후 종료) 때 호출: 지금 데이터를 외장하드에도 남겨둠
+function writeSyncCopy() {
+  const target = syncFilePath();
+  if (!target) return;
+  try {
+    fs.writeFileSync(target, JSON.stringify({ savedAt: new Date().toISOString(), data: storeCache }, null, 2), 'utf-8');
+    configCache.lastSyncedAt = new Date().toISOString();
+    writeConfig(configCache);
+  } catch (e) {
+    // 외장하드가 안 꽂혀 있거나 쓰기 실패해도, 로컬 저장(퇴근 전 백업)은 이미 됐으니 조용히 넘어감
+  }
+}
+
+// 앱 시작 시 호출: 외장하드 쪽이 이 컴퓨터보다 더 최신이면 그걸로 덮어씀
+function importSyncCopyIfNewer() {
+  const target = syncFilePath();
+  if (!target) return;
+  try {
+    if (!fs.existsSync(target)) return;
+    const parsed = JSON.parse(fs.readFileSync(target, 'utf-8'));
+    if (!parsed || !parsed.savedAt || !parsed.data) return;
+    const usbTime = new Date(parsed.savedAt).getTime();
+    const localTime = configCache.lastSyncedAt ? new Date(configCache.lastSyncedAt).getTime() : 0;
+    if (isNaN(usbTime) || usbTime <= localTime) return; // 이 컴퓨터가 이미 그만큼 최신이면 안 건드림
+    storeCache = parsed.data;
+    writeStore(storeCache);
+    configCache.lastSyncedAt = parsed.savedAt;
+    writeConfig(configCache);
+  } catch (e) {
+    // 외장하드 파일이 깨져있거나 읽기 실패하면, 이 컴퓨터에 있던 데이터를 그대로 안전하게 유지
+  }
+}
+importSyncCopyIfNewer();
+
 function currentDisplay() {
   const displays = screen.getAllDisplays();
   const saved = storeCache.__displayIndex;
@@ -130,6 +182,20 @@ function buildTrayMenu() {
       click: (item) => { app.setLoginItemSettings({ openAtLogin: item.checked }); }
     },
     { type: 'separator' },
+    {
+      label: configCache.syncFolder ? ('동기화 폴더: ' + configCache.syncFolder) : '동기화 폴더 선택 (외장하드)...',
+      click: async () => {
+        const res = await dialog.showOpenDialog(mainWindow, {
+          title: '외장하드 안의 동기화 폴더 선택',
+          properties: ['openDirectory']
+        });
+        if (res.canceled || !res.filePaths[0]) return;
+        configCache.syncFolder = res.filePaths[0];
+        writeConfig(configCache);
+        buildTrayMenu();
+      }
+    },
+    { type: 'separator' },
     { label: '종료', click: () => { app.quit(); } }
   ]);
   if (tray) tray.setContextMenu(menu);
@@ -190,6 +256,7 @@ function saveAndQuit() {
   } catch (e) {
     // even if the backup write fails, don't block quitting
   }
+  writeSyncCopy();
   app.quit();
 }
 ipcMain.on('save-and-quit', saveAndQuit);
