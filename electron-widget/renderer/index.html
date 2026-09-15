@@ -871,6 +871,9 @@
     <button id="editBtn"><span class="tip">레이아웃 편집</span>
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/><circle cx="12" cy="12" r="3"/></svg>
     </button>
+    <button id="resetLayoutBtn" hidden><span class="tip">레이아웃 되돌리기(기본 배치로)</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+    </button>
     <button id="infoBtn"><span class="tip">이 판에 대해</span>
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/></svg>
     </button>
@@ -896,7 +899,7 @@
     <p><b>할일</b> 제목 옆의 <b>📎 엑셀 연결</b>로 자주 쓰는 엑셀 파일 하나를 연결해두면, 그 제목을 누르거나 하단 독의 <b>할일</b> 아이콘을 눌렀을 때 바로 그 파일이 열려요. 연결을 없애려면 옆의 × 를 누르면 돼요.</p>
     <p><b>할일</b> 패널 위쪽에는 시작전·진행중·완료 건수와 완료율, 높음·중간·낮음 우선순위별 완료 현황이 한눈에 보여요. 같은 사업(카테고리) 안에서는 항목을 마우스로 눌러 끌면 순서를 원하는 대로 바꿀 수 있어요.</p>
     <p>하단 독의 <b>만다라트</b>를 누르면 목표 설계용 9x9 만다라트 판이 떠요. 가운데 칸에 핵심 목표를 적으면 둘레 8칸이 세부 목표가 되고, 그 세부 목표는 바깥 8개 블록에도 자동으로 똑같이 나와요 — 바깥 블록을 채워서 세부 목표마다 실천 항목을 8개씩 적어보세요.</p>
-    <p>하단 독의 <b>톱니바퀴</b>를 누르면 편집 모드가 켜져요 — 각 칸의 위쪽 제목 줄을 눌러 끌면 위치가, 오른쪽 아래 모서리를 끌면 크기가 바뀌어요. 한 번 옮기면 이 컴퓨터에서는 계속 그 자리에 저장돼요.</p>
+    <p>하단 독의 <b>톱니바퀴</b>를 누르면 편집 모드가 켜져요 — 각 칸의 위쪽 제목 줄을 눌러 끌면 위치가, 오른쪽 아래 모서리를 끌면 크기가 바뀌어요. 한 번 옮기면 이 컴퓨터에서는 계속 그 자리에 저장돼요. 옮기다가 이상해지면 편집 모드일 때 옆에 나오는 <b>되돌리기</b> 버튼으로 기본 배치로 한 번에 되돌릴 수 있어요.</p>
     <p>하단 독의 <b>카톡 붙이기</b>에서 지정하기를 누르고 3초 안에 카카오톡 창을 클릭하면, 그 뒤로는 위젯을 옮길 때마다 그 창도 위젯 오른쪽에 붙어서 같이 따라와요. <b>Ctrl+Alt+D</b>로 숨기면 그 창도 같이 최소화돼요. 지정을 안 해뒀어도 <b>F9</b> 키 하나만 누르면 열려있는 카카오톡 창을 전부 바로 최소화하는 비상 단축키로 쓸 수 있어요.</p>
     <button id="modalClose">닫기</button>
   </div>
@@ -2247,11 +2250,27 @@
       handle.addEventListener('mousedown', function(e){ startResize(el, e); });
     });
 
+    var resetLayoutBtn = document.getElementById('resetLayoutBtn');
     editBtn.addEventListener('click', function(){
       editing = !editing;
       editBtn.classList.toggle('active', editing);
       board.classList.toggle('editing', editing);
+      if(resetLayoutBtn) resetLayoutBtn.hidden = !editing;
     });
+
+    // 예전에 옮기거나 크기를 바꾸다가 이상한 값으로 저장된 칸이 있을 때, 하나씩
+    // 다시 끌어서 맞출 필요 없이 한 번에 기본 배치로 되돌리는 버튼.
+    if(resetLayoutBtn){
+      resetLayoutBtn.addEventListener('click', function(){
+        layout = {};
+        save('griddesk.layout', layout);
+        PANEL_IDS.forEach(function(id){
+          var el = document.getElementById(id);
+          el.classList.remove('placed');
+          el.style.left = ''; el.style.top = ''; el.style.width = ''; el.style.height = '';
+        });
+      });
+    }
 
     window.addEventListener('resize', applySaved);
     applySaved();
