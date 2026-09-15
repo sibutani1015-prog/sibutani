@@ -276,8 +276,8 @@ function parseExcelProjects(filePath) {
 
   const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
   const items = [];
-  let currentProject = '개인';
   let nextId = 1;
+  let cur = null; // 지금 누적 중인 프로젝트 { name, priority, end, childProgresses }
 
   function cellVal(col, row) {
     const cell = ws[col + row];
@@ -288,33 +288,42 @@ function parseExcelProjects(filePath) {
     const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
     return y + '-' + m + '-' + day;
   }
+  function flushProject() {
+    if (!cur) return;
+    const vals = cur.childProgresses;
+    const avg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+    items.push({
+      id: 'xlsx-' + (nextId++),
+      title: cur.name,
+      date: cur.end || todayIsoMain(),
+      project: '프로젝트',
+      priority: PRIORITY_LABEL[cur.priority] || '중간',
+      progress: avg,
+      repeat: 'none',
+      _fromExcel: true
+    });
+    cur = null;
+  }
 
+  // 프로젝트(사업) 단위로 하나씩만 보여줌 - 하위 업무 하나하나는 목록에 안 넣고
+  // 그 프로젝트의 평균 진행률로 묶어서 한 줄만 표시 (사업이 몇 개 안 되니 이게 더 알아보기 쉬움)
   for (let r = PROJECT_HEADER_ROW + 1; r <= range.e.r + 1; r++) {
     const star = cellVal('B', r);
     const name = cellVal('C', r);
     if (name === undefined || String(name).trim() === '') continue;
 
     if (String(star || '').trim() === '*') {
-      currentProject = String(name).trim();
-      continue; // 프로젝트 헤더 행은 목록에 넣지 않고, 사업별 그룹 이름으로만 사용
+      flushProject();
+      cur = { name: String(name).trim(), priority: cellVal('D', r), end: toIso(cellVal('F', r)), childProgresses: [] };
+      continue;
     }
 
-    const pri = cellVal('D', r);
-    const endDate = toIso(cellVal('F', r));
-    const rawProgress = cellVal('I', r);
-    const progress = (typeof rawProgress === 'number') ? Math.round(rawProgress * 100) : 0;
-
-    items.push({
-      id: 'xlsx-' + (nextId++),
-      title: String(name).trim(),
-      date: endDate || todayIsoMain(),
-      project: currentProject,
-      priority: PRIORITY_LABEL[pri] || '중간',
-      progress: progress,
-      repeat: 'none',
-      _fromExcel: true
-    });
+    if (cur) {
+      const rawProgress = cellVal('I', r);
+      cur.childProgresses.push((typeof rawProgress === 'number') ? Math.round(rawProgress * 100) : 0);
+    }
   }
+  flushProject();
   return { ok: true, items: items };
 }
 
