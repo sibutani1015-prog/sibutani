@@ -178,7 +178,7 @@ ipcMain.on('hide-widget', () => {
 });
 
 /* ---------- IPC: 퇴근 전 한 번에 - 백업 저장하고 완전히 종료 ---------- */
-ipcMain.on('save-and-quit', () => {
+function saveAndQuit() {
   try {
     const dir = path.join(app.getPath('documents'), 'griddesk-backups');
     fs.mkdirSync(dir, { recursive: true });
@@ -189,7 +189,8 @@ ipcMain.on('save-and-quit', () => {
     // even if the backup write fails, don't block quitting
   }
   app.quit();
-});
+}
+ipcMain.on('save-and-quit', saveAndQuit);
 
 /* ---------- IPC: local JSON store (replaces the web version's localStorage) ---------- */
 ipcMain.on('store-get', (event, key) => {
