@@ -13,6 +13,9 @@ contextBridge.exposeInMainWorld('api', {
   // brought back with the tray icon or Ctrl+Alt+D.
   hideWidget: () => ipcRenderer.send('hide-widget'),
 
+  // 퇴근 전 한 번에: 문서 폴더에 백업 파일을 남기고 앱을 완전히 종료.
+  saveAndQuit: () => ipcRenderer.send('save-and-quit'),
+
   store: {
     get: (key) => ipcRenderer.sendSync('store-get', key),
     set: (key, value) => ipcRenderer.send('store-set', key, value),

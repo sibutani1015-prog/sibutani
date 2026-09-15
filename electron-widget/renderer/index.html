@@ -718,6 +718,7 @@
     <h3 class="serif">그리드 데스크</h3>
     <p>학교용 위젯 프로그램의 짜임새를 참고해 만든 개인용 데스크톱 위젯이에요. 달력·일정·할일·자료함·메시지 발송·메모·AI 도우미·D-Day를 담았어요.</p>
     <p>빈 곳을 클릭하면 그 아래 바탕화면 아이콘이 그대로 눌려요. 화면 오른쪽 아래 트레이 아이콘을 오른쪽 클릭하면 새로고침·앞으로 보기·모니터 선택·시작 시 자동 실행·종료를 할 수 있어요. <b>Ctrl+Alt+D</b>를 누르면 위젯이 보이면 숨고, 숨어있으면 다시 보여요 — 독의 <b>잠깐 숨기기</b> 아이콘을 눌러도 똑같이 바로 숨길 수 있어요(잠금 없이).</p>
+    <p>퇴근할 때는 위젯 안에서 <b>Ctrl+Backspace</b>를 누르세요. 문서 폴더에 백업 파일을 하나 남기고 프로그램이 완전히 종료돼요.</p>
     <p>하단 독의 <b>톱니바퀴</b>를 누르면 편집 모드가 켜져요 — 각 칸의 위쪽 제목 줄을 눌러 끌면 위치가, 오른쪽 아래 모서리를 끌면 크기가 바뀌어요. 한 번 옮기면 이 컴퓨터에서는 계속 그 자리에 저장돼요.</p>
     <button id="modalClose">닫기</button>
   </div>
@@ -1708,6 +1709,19 @@
     hideBtn.addEventListener('click', function(){ window.api.hideWidget(); });
   } else if(hideBtn){
     hideBtn.hidden = true;
+  }
+
+  /* ---------- 퇴근 전 한 번에: Ctrl+Backspace로 백업 저장 후 완전 종료.
+     전역 단축키가 아니라 위젯 창에 포커스가 있을 때만 동작해요 - Ctrl+Backspace는
+     다른 프로그램에서 "한 단어 지우기"로 흔히 쓰여서, 시스템 전체에 걸면 그 기능을
+     방해하게 되기 때문이에요. */
+  if(window.api && window.api.saveAndQuit){
+    document.addEventListener('keydown', function(e){
+      if(e.ctrlKey && e.key === 'Backspace'){
+        e.preventDefault();
+        window.api.saveAndQuit();
+      }
+    });
   }
 
   /* ---------- info modal ---------- */
