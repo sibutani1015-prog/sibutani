@@ -26,6 +26,8 @@
     --warn-soft:#F0DDD4;
     --gold:#A8895A;
     --gold-soft:#EFE3D0;
+    --prio-high:#D64545;
+    --prio-mid:#DDAA1E;
     --m0:#DCEEDC; --m1:#F6D9E6; --m2:#FBEFC2; --m3:#F7DCD3;
     --m4:#E3D9F5; --m5:#D6EAF5; --m6:#D6F0EA; --m7:#FBE3C8;
     --shadow: 0 1px 6px rgba(20,60,45,0.12);
@@ -39,6 +41,7 @@
       --grid:#324339; --grid-strong:#48604F;
       --accent:#3FCE9A; --accent-ink:#0A1310; --accent-soft:#22392E;
       --sun:#D98F76; --sat:#7B98B2; --warn:#D98F76; --warn-soft:#3A2A22; --gold:#C7AC7E; --gold-soft:#362E1E;
+      --prio-high:#E8746B; --prio-mid:#E8C34A;
       --m0:#22392E; --m1:#3A2530; --m2:#3A3320; --m3:#3A2A22;
       --m4:#2A2438; --m5:#22303A; --m6:#1F3530; --m7:#362E1E;
       --shadow: 0 1px 8px rgba(0,0,0,0.4);
@@ -50,6 +53,7 @@
     --grid:#324339; --grid-strong:#48604F;
     --accent:#3FCE9A; --accent-ink:#0A1310; --accent-soft:#22392E;
     --sun:#D98F76; --sat:#7B98B2; --warn:#D98F76; --warn-soft:#3A2A22; --gold:#C7AC7E; --gold-soft:#362E1E;
+    --prio-high:#E8746B; --prio-mid:#E8C34A;
     --m0:#22392E; --m1:#3A2530; --m2:#3A3320; --m3:#3A2A22;
     --m4:#2A2438; --m5:#22303A; --m6:#1F3530; --m7:#362E1E;
     --shadow: 0 1px 8px rgba(0,0,0,0.4);
@@ -230,8 +234,8 @@
   .pbar-frac{ font-size:10px; font-weight:700; color:var(--ink-soft); font-family:var(--mono); }
   .pbar-track{ width:14px; height:36px; border-radius:7px; background:var(--grid); display:flex; align-items:flex-end; overflow:hidden; }
   .pbar-track i{ display:block; width:100%; border-radius:7px; transition:height .3s ease; }
-  .pbar-high .pbar-track i{ background:var(--warn); }
-  .pbar-mid .pbar-track i{ background:var(--gold); }
+  .pbar-high .pbar-track i{ background:var(--prio-high); }
+  .pbar-mid .pbar-track i{ background:var(--prio-mid); }
   .pbar-low .pbar-track i{ background:var(--accent); }
   .pbar-name{ font-size:9px; color:var(--ink-faint); font-weight:600; }
 
@@ -301,8 +305,8 @@
 
   /* ---------- schedule rows ---------- */
   li.sched .pr{ flex:none; width:8px; height:8px; border-radius:50%; margin-top:2px; align-self:flex-start; }
-  li.sched[data-priority="높음"] .pr{ background:var(--warn); }
-  li.sched[data-priority="중간"] .pr{ background:var(--gold); }
+  li.sched[data-priority="높음"] .pr{ background:var(--prio-high); }
+  li.sched[data-priority="중간"] .pr{ background:var(--prio-mid); }
   li.sched[data-priority="낮음"] .pr{ background:var(--accent); }
   li.sched .body{ flex:1; min-width:0; }
   li.sched .txt{ display:block; overflow-wrap:break-word; }
@@ -1459,7 +1463,7 @@
         if(items.length){
           var top = items.slice().sort(function(a,b){ return PRIORITY_RANK[b.priority]-PRIORITY_RANK[a.priority]; }).slice(0,4);
           html += '<span class="dots">' + top.map(function(it){
-            var color = it.priority === '높음' ? 'var(--warn)' : it.priority === '중간' ? 'var(--gold)' : 'var(--accent)';
+            var color = it.priority === '높음' ? 'var(--prio-high)' : it.priority === '중간' ? 'var(--prio-mid)' : 'var(--accent)';
             return '<i style="background:' + color + '"></i>';
           }).join('') + '</span>';
         }
