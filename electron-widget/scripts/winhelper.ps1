@@ -96,6 +96,18 @@ switch ($Action) {
     [GriddeskWin32]::ShowWindow([IntPtr]$w.Handle, 9) | Out-Null   # SW_RESTORE
     [PSCustomObject]@{ ok = $true } | ConvertTo-Json -Compress
   }
+  # 특정 창 하나가 아니라, 그 프로그램(예: 카카오톡)의 열려있는 창을 전부
+  # 한번에 최소화/복원함 - "붙이기"로 지정해두지 않았어도 비상시에 쓸 수 있음.
+  'MinimizeAllByProcess' {
+    $wins = @(Get-VisibleWindows | Where-Object { $_.Process -eq $Process })
+    foreach ($w in $wins) { [GriddeskWin32]::ShowWindow([IntPtr]$w.Handle, 6) | Out-Null }  # SW_MINIMIZE
+    [PSCustomObject]@{ ok = $true; count = $wins.Count } | ConvertTo-Json -Compress
+  }
+  'RestoreAllByProcess' {
+    $wins = @(Get-VisibleWindows | Where-Object { $_.Process -eq $Process })
+    foreach ($w in $wins) { [GriddeskWin32]::ShowWindow([IntPtr]$w.Handle, 9) | Out-Null }  # SW_RESTORE
+    [PSCustomObject]@{ ok = $true; count = $wins.Count } | ConvertTo-Json -Compress
+  }
   default {
     [PSCustomObject]@{ ok = $false; error = 'unknown action' } | ConvertTo-Json -Compress
   }

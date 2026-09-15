@@ -263,6 +263,14 @@ function restoreDockedWindow() {
   if (args) runWinHelper(['-Action', 'Restore'].concat(args)).then(() => scheduleDockReposition());
 }
 
+// 카톡을 붙이기로 지정해두지 않았어도 쓸 수 있는 비상 단축키: 열려있는
+// 카카오톡 창을 전부(친구 목록 + 대화창들) 한번에 최소화/복원함. 지정해둔
+// 창이 있으면 그 프로세스 이름을 쓰고, 없으면 "KakaoTalk"으로 가정함.
+let kakaoAllHidden = false;
+function kakaoProcessName() {
+  return (configCache.dockTarget && configCache.dockTarget.process) || 'KakaoTalk';
+}
+
 app.whenReady().then(() => {
   createWindow();
   buildTray();
@@ -274,6 +282,18 @@ app.whenReady().then(() => {
       minimizeDockedWindow();
     } else {
       bringToFront();
+    }
+  });
+
+  // 비상 단축키: 위젯과는 무관하게, 열려있는 카카오톡 창만 전부 숨기거나 복원함
+  globalShortcut.register('CommandOrControl+Alt+K', () => {
+    const proc = kakaoProcessName();
+    if (!kakaoAllHidden) {
+      runWinHelper(['-Action', 'MinimizeAllByProcess', '-Process', proc]);
+      kakaoAllHidden = true;
+    } else {
+      runWinHelper(['-Action', 'RestoreAllByProcess', '-Process', proc]).then(() => scheduleDockReposition());
+      kakaoAllHidden = false;
     }
   });
 
