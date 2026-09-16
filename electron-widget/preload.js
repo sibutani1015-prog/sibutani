@@ -9,6 +9,10 @@ contextBridge.exposeInMainWorld('api', {
   // widget itself receives the click.
   setIgnoreMouseEvents: (ignore) => ipcRenderer.send('set-ignore-mouse-events', ignore),
 
+  // 위젯 창 자체의 크기 조절(직접 만든 손잡이 드래그용) - 클릭스루 때문에
+  // OS 기본 테두리 드래그가 안 먹혀서 대신 씀.
+  resizeWindowBy: (dx, dy) => ipcRenderer.send('resize-window-by', dx, dy),
+
   // Quick hide: tucks the widget out of sight instantly (no password/lock),
   // brought back with the tray icon or Ctrl+Alt+D.
   hideWidget: () => ipcRenderer.send('hide-widget'),

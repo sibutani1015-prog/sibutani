@@ -55,12 +55,22 @@
   button{ cursor:pointer; }
 
   .page{
+    position:relative;
     width:calc(80% - var(--side-gap)); max-width:none; margin:0 0 0 var(--side-gap); padding: 12px 14px 62px;
     height:100vh; overflow:hidden;
     display:flex; flex-direction:column;
     background:var(--paper);
     border-radius:22px;
   }
+  /* frame:false 창이라 OS 기본 테두리 드래그로 크기 조절이 안 돼서(클릭스루
+     로직과 충돌) 직접 만든 손잡이. 항상 클릭 가능해야 하므로 클릭스루
+     판정 목록에도 포함시켜둠. */
+  .window-resize-handle{
+    position:absolute; right:6px; bottom:6px; width:22px; height:22px; padding:4px;
+    color:var(--ink-faint); cursor:nwse-resize; z-index:20; border-radius:8px;
+  }
+  .window-resize-handle:hover{ color:var(--accent); background:var(--cell-alt); }
+  .window-resize-handle svg{ width:100%; height:100%; stroke:currentColor; }
 
   /* ---------- header: a real card so it stays legible over any wallpaper,
      and doubles as the window's drag handle (frameless window) ---------- */
@@ -757,6 +767,9 @@
   </div>
 
   <p class="storage-note">일정 · 메모 · 자료함 · 연락처 기록은 이 컴퓨터에만 저장돼요 (트레이 아이콘에서 시작 시 자동 실행 · 모니터를 설정할 수 있어요, Ctrl+Alt+D로 앞으로 가져올 수 있어요).</p>
+  <span class="window-resize-handle" id="windowResizeHandle" title="끌어서 위젯 창 크기 조절">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M21 15v6h-6M21 21 13 13"/><path d="M9 3H3v6"/></svg>
+  </span>
 </div>
 
 <div class="popover-back" id="popoverBack"></div>
@@ -1028,7 +1041,7 @@
   function refreshClickThrough(){
     if(!window.api) return;
     var el = (lastMouseX >= 0) ? document.elementFromPoint(lastMouseX, lastMouseY) : null;
-    var interactive = !!(el && el.closest('.panel, .dock, .modal-back.open, .head, .popover.open, .popover-back.open, .kakao-slot-head, .kakao-slot .resize-handle'));
+    var interactive = !!(el && el.closest('.panel, .dock, .modal-back.open, .head, .popover.open, .popover-back.open, .kakao-slot-head, .kakao-slot .resize-handle, .window-resize-handle'));
     if(interactive === lastIgnoreState) return;
     lastIgnoreState = interactive;
     window.api.setIgnoreMouseEvents(!interactive);
@@ -2450,6 +2463,33 @@
 
     window.addEventListener('resize', applySaved);
     applySaved();
+  })();
+
+  /* ---------- 위젯 창 크기 조절 손잡이 ----------
+     클릭스루 로직 때문에 OS 기본 테두리 드래그가 안 먹혀서, 직접 만든
+     손잡이로 창 크기를 바꿈. 창이 줄어들면서 커서가 창 밖으로 나가도
+     계속 추적해야 해서(포인터가 실제로 창 경계를 벗어나는 경우가 흔함),
+     일반 mousemove 대신 setPointerCapture를 씀 - 이건 브라우저가 OS
+     차원에서 마우스를 붙잡아두는 방식이라 창 밖으로 나가도 이벤트가 계속 옴. ---------- */
+  (function(){
+    var handle = document.getElementById('windowResizeHandle');
+    if(!handle || !window.api || !window.api.resizeWindowBy) return;
+    var dragging = false, lastX = 0, lastY = 0;
+    handle.addEventListener('pointerdown', function(e){
+      e.preventDefault();
+      dragging = true;
+      lastX = e.clientX; lastY = e.clientY;
+      handle.setPointerCapture(e.pointerId);
+    });
+    handle.addEventListener('pointermove', function(e){
+      if(!dragging) return;
+      var dx = e.clientX - lastX, dy = e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      if(dx || dy) window.api.resizeWindowBy(dx, dy);
+    });
+    function stopDrag(){ dragging = false; }
+    handle.addEventListener('pointerup', stopDrag);
+    handle.addEventListener('pointercancel', stopDrag);
   })();
 
   /* ---------- 잠깐 숨기기: 잠금 없이 바로 창을 숨김, Ctrl+Alt+D나 트레이 아이콘으로 다시 보기 ---------- */

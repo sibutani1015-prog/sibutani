@@ -344,6 +344,21 @@ ipcMain.on('set-ignore-mouse-events', (event, ignore) => {
   mainWindow.setIgnoreMouseEvents(ignore, { forward: true });
 });
 
+/* ---------- IPC: 창 크기 조절 (직접 만든 손잡이용) ----------
+   frame:false 창에서 클릭스루를 계속 켜고 끄다 보니, 윈도우 테두리를
+   마우스로 잡아서 늘리는 OS 기본 리사이즈가 먹통이 됨(테두리도 클릭스루
+   대상이 되어버림). 그래서 화면 안에 직접 손잡이를 두고, 거기서 드래그한
+   만큼을 여기로 보내서 창 크기를 직접 바꿔줌. */
+ipcMain.on('resize-window-by', (event, dx, dy) => {
+  if (!mainWindow) return;
+  const b = mainWindow.getBounds();
+  mainWindow.setBounds({
+    x: b.x, y: b.y,
+    width: Math.max(400, b.width + dx),
+    height: Math.max(300, b.height + dy)
+  });
+});
+
 /* ---------- IPC: quick hide (no lock, just tuck the widget away instantly) ---------- */
 ipcMain.on('hide-widget', () => {
   if (!mainWindow) return;
