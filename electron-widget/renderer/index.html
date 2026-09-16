@@ -441,12 +441,18 @@
   .qc-actions .save{ background:var(--accent); color:var(--accent-ink); }
   .qc-actions .cancel{ background:var(--cell-alt); color:var(--ink-soft); }
 
-  /* ---------- dock ---------- */
-  .dock-wrap{ position:fixed; left:var(--side-gap); right:var(--side-gap); bottom:12px; display:flex; justify-content:center; pointer-events:none; z-index:10; }
-  .dock{ pointer-events:auto; display:flex; gap:2px; padding:5px; background:var(--accent-soft); backdrop-filter:blur(10px); border:1px solid var(--grid-strong); border-radius:18px; box-shadow:0 8px 24px rgba(0,0,0,0.18); width:fit-content; max-width:96%; justify-content:center; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; }
+  /* ---------- dock ----------
+     .page(위젯의 보라색 카드)는 화면 전체가 아니라 왼쪽 80%만 차지하는데
+     (margin-left:side-gap, width:80%-side-gap → 오른쪽 끝이 화면의 정확히
+     80% 지점), .dock-wrap은 position:fixed라서 화면(뷰포트) 전체를
+     기준으로 가운데 정렬됨 - 그래서 좌우를 똑같이 맞춰도 카드 기준으로는
+     오른쪽으로 치우쳐 보였음. 카드의 실제 가로 범위(side-gap ~ 80%)에
+     맞춰서 정렬해야 카드 안에서 진짜 가운데로 보임. */
+  .dock-wrap{ position:fixed; left:var(--side-gap); right:20%; bottom:12px; display:flex; justify-content:center; pointer-events:none; z-index:10; }
+  .dock{ pointer-events:auto; display:flex; gap:2px; padding:4px; background:var(--accent-soft); backdrop-filter:blur(10px); border:1px solid var(--grid-strong); border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.18); width:fit-content; max-width:96%; justify-content:center; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; }
   .dock::-webkit-scrollbar{ display:none; }
-  .dock button{ position:relative; flex:none; width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:none; border:none; border-radius:13px; color:var(--ink-soft); }
-  .dock button svg{ width:17px; height:17px; stroke:currentColor; }
+  .dock button{ position:relative; flex:none; width:34px; height:34px; display:flex; align-items:center; justify-content:center; background:none; border:none; border-radius:11px; color:var(--ink-soft); }
+  .dock button svg{ width:15px; height:15px; stroke:currentColor; }
   .dock button:hover, .dock button:focus-visible{ color:var(--accent); background:var(--cell); outline:none; }
   .dock button#editBtn.active{ color:var(--accent-ink); background:var(--accent); }
   .dock button .tip{ position:absolute; bottom:52px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--paper); border-radius:9px; font-size:11px; padding:3px 7px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .12s; }
