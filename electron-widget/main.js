@@ -166,6 +166,14 @@ function buildTrayMenu() {
   const menu = Menu.buildFromTemplate([
     { label: '새로고침', click: () => { if (mainWindow) mainWindow.reload(); } },
     { label: '앞으로 보기 (Ctrl+Alt+D)', click: bringToFront },
+    {
+      label: '개발자 도구 (문제 진단용)',
+      click: () => {
+        if (!mainWindow) return;
+        bringToFront();
+        mainWindow.webContents.openDevTools({ mode: 'detach' });
+      }
+    },
     { type: 'separator' },
     { label: '모니터 선택', submenu: monitorItems },
     {
