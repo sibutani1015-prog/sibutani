@@ -87,12 +87,14 @@ function currentDisplay() {
 
 function createWindow() {
   // A window the user has dragged/resized before (across either monitor)
-  // is remembered exactly; otherwise fall back to filling the chosen display.
+  // is remembered exactly; otherwise fall back to filling the chosen display's
+  // work area (screen minus the taskbar) - not the full bounds, so the widget
+  // never covers/overlaps the taskbar.
   const saved = storeCache.__windowBounds;
   const disp = currentDisplay();
   const bounds = saved || {
-    x: disp.bounds.x, y: disp.bounds.y,
-    width: disp.bounds.width, height: disp.bounds.height
+    x: disp.workArea.x, y: disp.workArea.y,
+    width: disp.workArea.width, height: disp.workArea.height
   };
 
   mainWindow = new BrowserWindow({
@@ -158,7 +160,7 @@ function buildTrayMenu() {
     click: () => {
       storeCache.__displayIndex = i;
       writeStore(storeCache);
-      if (mainWindow) mainWindow.setBounds(displays[i].bounds);
+      if (mainWindow) mainWindow.setBounds(displays[i].workArea);
       buildTrayMenu();
     }
   }));

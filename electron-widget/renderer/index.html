@@ -930,6 +930,7 @@
   <div class="kakao-slot-head" id="kakaoSlotHead">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/></svg>
     <span>카톡 자리 — 여기로 카카오톡 창을 옮겨두세요</span>
+    <button id="kakaoSlotAlign" type="button" aria-label="위젯 높이에 맞추기" title="위젯 높이에 맞추기">⇕</button>
     <button id="kakaoSlotClose" type="button" aria-label="숨기기">×</button>
   </div>
   <span class="resize-handle" id="kakaoSlotHandle">
@@ -2172,6 +2173,7 @@
     var head = document.getElementById('kakaoSlotHead');
     var handle = document.getElementById('kakaoSlotHandle');
     var closeBtn = document.getElementById('kakaoSlotClose');
+    var alignBtn = document.getElementById('kakaoSlotAlign');
     var toggleBtn = document.getElementById('kakaoSlotToggle');
     if(!slot || !toggleBtn) return;
 
@@ -2183,15 +2185,34 @@
       return { left:left, top:top, w:w, h:h };
     }
 
+    function defaultSlotRect(){
+      // 처음 보여줄 때는 그리드 데스크 카드(.page)와 위쪽/높이를 맞춰서,
+      // 위젯 옆에 나란히 붙어있는 것처럼 보이게 함.
+      var pageEl = document.querySelector('.page');
+      var pr = pageEl ? pageEl.getBoundingClientRect() : null;
+      if(!pr) return { left: window.innerWidth - 380, top: 90, w: 340, h: 500 };
+      return { left: pr.right + 10, top: pr.top, w: Math.min(340, window.innerWidth - pr.right - 20), h: pr.height };
+    }
+
     function applySlotPos(){
       var pos = load('griddesk.kakaoSlotPos', null);
+      var d = defaultSlotRect();
       var fit = pos
         ? fitToScreen(pos.xPct/100*window.innerWidth, pos.yPct/100*window.innerHeight, pos.wPct/100*window.innerWidth, pos.hPct/100*window.innerHeight)
-        : fitToScreen(window.innerWidth - 380, 90, 340, 500);
+        : fitToScreen(d.left, d.top, d.w, d.h);
       slot.style.left = fit.left + 'px';
       slot.style.top = fit.top + 'px';
       slot.style.width = fit.w + 'px';
       slot.style.height = fit.h + 'px';
+    }
+
+    function alignSlotToPage(){
+      var d = defaultSlotRect();
+      var cur = slot.getBoundingClientRect();
+      var fit = fitToScreen(cur.left, d.top, cur.width, d.h);
+      slot.style.top = fit.top + 'px';
+      slot.style.height = fit.h + 'px';
+      saveSlotPos();
     }
 
     function saveSlotPos(){
@@ -2213,6 +2234,7 @@
 
     toggleBtn.addEventListener('click', function(){ setSlotVisible(slot.hidden); });
     if(closeBtn) closeBtn.addEventListener('click', function(e){ e.stopPropagation(); setSlotVisible(false); });
+    if(alignBtn) alignBtn.addEventListener('click', function(e){ e.stopPropagation(); alignSlotToPage(); });
 
     head.addEventListener('mousedown', function(e){
       if(e.target.closest('button')) return;
