@@ -2092,7 +2092,11 @@
       kakaoStatusEl.textContent = '3초 안에 카카오톡 창을 클릭해서 앞으로 가져와 주세요...';
       window.api.pickDockWindow().then(function(res){
         if(res && res.ok){ renderKakaoStatus(); }
-        else { kakaoStatusEl.textContent = '창을 지정하지 못했어요. 카카오톡을 켜둔 상태로 다시 시도해주세요.'; }
+        else {
+          var msg = '창을 지정하지 못했어요. 카카오톡을 켜둔 상태로 다시 시도해주세요.';
+          if(res && res.error) msg += ' (' + res.error.slice(0,150) + ')';
+          kakaoStatusEl.textContent = msg;
+        }
       });
     });
   } else if(kakaoPickBtn){

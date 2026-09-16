@@ -219,19 +219,33 @@ function buildTray() {
    창이라 Electron API로는 못 다루고, Windows API(user32.dll)를 쓰는
    PowerShell 스크립트(scripts/winhelper.ps1)로 처리함 - robotjs 같은
    네이티브 npm 모듈을 새로 빌드해야 하는 위험을 피하기 위함. ---------- */
-const WINHELPER_PATH = path.join(__dirname, 'scripts', 'winhelper.ps1');
+// 패키징하면 앱 파일들이 app.asar 안에 들어가는데, 그 안의 경로는 Electron/Node의
+// fs만 이해하는 가짜 경로라서 powershell.exe 같은 외부 프로그램은 못 열어봄.
+// package.json의 asarUnpack 설정으로 scripts 폴더는 실제로 app.asar.unpacked
+// 밑에 그대로 풀려 있으니, 경로도 그쪽을 가리키게 바꿔줘야 함(개발 중에는
+// 애초에 asar가 없어서 이 치환이 그냥 아무 효과가 없음).
+const WINHELPER_PATH = path.join(__dirname, 'scripts', 'winhelper.ps1').replace('app.asar', 'app.asar.unpacked');
 function runWinHelper(args) {
   return new Promise((resolve) => {
     try {
       const ps = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', WINHELPER_PATH].concat(args), { windowsHide: true });
       let out = '';
+      let errOut = '';
       ps.stdout.on('data', (d) => { out += d.toString(); });
+      ps.stderr.on('data', (d) => { errOut += d.toString(); });
       ps.on('close', () => {
-        try { resolve(JSON.parse(out.trim())); } catch (e) { resolve({ ok: false }); }
+        try {
+          resolve(JSON.parse(out.trim()));
+        } catch (e) {
+          // 정상 출력이 JSON이 아니면(정책 차단, 스크립트를 못 찾음 등) 원인을
+          // 알 수 있게 에러 내용을 그대로 돌려줌 - "안 되는 것 같다"는 것보다
+          // 실제 메시지를 봐야 원인을 찾을 수 있음.
+          resolve({ ok: false, error: (errOut || out || 'unknown').trim().slice(0, 500) });
+        }
       });
-      ps.on('error', () => resolve({ ok: false }));
+      ps.on('error', (e) => resolve({ ok: false, error: String(e && e.message || e) }));
     } catch (e) {
-      resolve({ ok: false });
+      resolve({ ok: false, error: String(e && e.message || e) });
     }
   });
 }
@@ -265,17 +279,17 @@ function restoreDockedWindow() {
 
 // 카톡을 붙이기로 지정해두지 않았어도 쓸 수 있는 비상 단축키: 열려있는
 // 카카오톡 창을 전부(친구 목록 + 대화창들) 한번에 최소화/복원함. 지정해둔
-// 창이 있으면 그 프로세스 이름을 쓰고, 없으면 "KakaoTalk"으로 가정함.
+// 창의 프로세스 이름을 쓰면, 붙이기를 잘못 지정했을 때(카톡이 아닌 다른
+// 창을 지정한 경우) F9까지 같이 안 먹히게 되므로, F9는 항상 "KakaoTalk"
+// 고정값만 사용해서 붙이기 상태와 무관하게 동작하게 함.
 let kakaoAllHidden = false;
-function kakaoProcessName() {
-  return (configCache.dockTarget && configCache.dockTarget.process) || 'KakaoTalk';
-}
+const KAKAO_PROCESS_NAME = 'KakaoTalk';
 
 app.whenReady().then(() => {
   createWindow();
   buildTray();
 
-  globalShortcut.register('CommandOrControl+Alt+D', () => {
+  const ddRegistered = globalShortcut.register('CommandOrControl+Alt+D', () => {
     if (!mainWindow) return;
     if (mainWindow.isVisible()) {
       mainWindow.hide();
@@ -284,20 +298,25 @@ app.whenReady().then(() => {
       bringToFront();
     }
   });
+  if (!ddRegistered) notifyDday('단축키 등록 실패', 'Ctrl+Alt+D를 다른 프로그램이 이미 쓰고 있어서 등록하지 못했어요.');
 
   // 비상 단축키: 위젯과는 무관하게, 열려있는 카카오톡 창만 전부 숨기거나 복원함.
   // 급할 때 여러 키를 조합해서 누르기 힘드니 F9 하나만 - 숫자/문자 키를 단독으로
   // 전역 단축키로 쓰면 평소 타이핑(문서, 카톡 대화 등)까지 다 막혀버려서 안 됨.
-  globalShortcut.register('F9', () => {
-    const proc = kakaoProcessName();
+  const f9Registered = globalShortcut.register('F9', () => {
     if (!kakaoAllHidden) {
-      runWinHelper(['-Action', 'MinimizeAllByProcess', '-Process', proc]);
+      runWinHelper(['-Action', 'MinimizeAllByProcess', '-Process', KAKAO_PROCESS_NAME]).then((res) => {
+        if (!res || !res.ok) notifyDday('F9 실행 실패', (res && res.error) ? res.error.slice(0, 120) : '카카오톡 창을 찾지 못했어요.');
+      });
       kakaoAllHidden = true;
     } else {
-      runWinHelper(['-Action', 'RestoreAllByProcess', '-Process', proc]).then(() => scheduleDockReposition());
+      runWinHelper(['-Action', 'RestoreAllByProcess', '-Process', KAKAO_PROCESS_NAME]).then(() => scheduleDockReposition());
       kakaoAllHidden = false;
     }
   });
+  // 노트북 F키는 밝기/볼륨 같은 하드웨어 기능에 물려있어 등록 자체가 실패하는
+  // 경우가 있어서, 실패하면 조용히 넘어가지 않고 바로 알려줌.
+  if (!f9Registered) notifyDday('F9 단축키 등록 실패', '다른 프로그램이 F9를 이미 쓰고 있거나, 키보드의 F9가 하드웨어 기능(Fn)에 물려있을 수 있어요.');
 
   // 이전에 연결해둔 프로젝트 엑셀 파일이 있으면, 재시작 후에도 계속 감시를 이어감
   const linkedExcel = storeCache['griddesk.todoLinkedFile'];

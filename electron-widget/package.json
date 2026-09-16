@@ -31,6 +31,9 @@
       "scripts/**/*",
       "node_modules/**/*"
     ],
+    "asarUnpack": [
+      "scripts/**/*"
+    ],
     "win": {
       "target": "nsis",
       "icon": "assets/icon.png"
