@@ -45,36 +45,44 @@ function syncFilePath() {
   return path.join(configCache.syncFolder, 'griddesk-sync.json');
 }
 
-// 퇴근 전 한 번에(저장 후 종료) 때 호출: 지금 데이터를 외장하드에도 남겨둠
+// 퇴근 전 한 번에(저장 후 종료) 때 호출: 지금 데이터를 외장하드에도 남겨둠.
+// 예전엔 실패해도 조용히 넘어가서, 왜 동기화 파일이 안 생겼는지 알 수가
+// 없었음 - 이제 실패하면 무엇 때문인지 결과로 알려줌(호출한 쪽에서 필요하면
+// 알림을 띄움).
 function writeSyncCopy() {
   const target = syncFilePath();
-  if (!target) return;
+  if (!target) return { ok: false, error: '동기화 폴더가 설정되어 있지 않아요.' };
   try {
     fs.writeFileSync(target, JSON.stringify({ savedAt: new Date().toISOString(), data: storeCache }, null, 2), 'utf-8');
     configCache.lastSyncedAt = new Date().toISOString();
     writeConfig(configCache);
+    return { ok: true };
   } catch (e) {
-    // 외장하드가 안 꽂혀 있거나 쓰기 실패해도, 로컬 저장(퇴근 전 백업)은 이미 됐으니 조용히 넘어감
+    // 외장하드가 안 꽂혀 있거나 쓰기 실패한 경우 - 로컬 저장(퇴근 전 백업)은
+    // 이미 됐으니 앱 종료 자체는 막지 않지만, 원인은 알려줌
+    return { ok: false, error: String((e && e.message) || e) };
   }
 }
 
 // 앱 시작 시 호출: 외장하드 쪽이 이 컴퓨터보다 더 최신이면 그걸로 덮어씀
 function importSyncCopyIfNewer() {
   const target = syncFilePath();
-  if (!target) return;
+  if (!target) return { ok: false, error: '동기화 폴더가 설정되어 있지 않아요.' };
   try {
-    if (!fs.existsSync(target)) return;
+    if (!fs.existsSync(target)) return { ok: false, error: '동기화 파일이 아직 없어요(그 폴더에 한 번도 저장된 적 없음).' };
     const parsed = JSON.parse(fs.readFileSync(target, 'utf-8'));
-    if (!parsed || !parsed.savedAt || !parsed.data) return;
+    if (!parsed || !parsed.savedAt || !parsed.data) return { ok: false, error: '동기화 파일 형식이 이상해요.' };
     const usbTime = new Date(parsed.savedAt).getTime();
     const localTime = configCache.lastSyncedAt ? new Date(configCache.lastSyncedAt).getTime() : 0;
-    if (isNaN(usbTime) || usbTime <= localTime) return; // 이 컴퓨터가 이미 그만큼 최신이면 안 건드림
+    if (isNaN(usbTime) || usbTime <= localTime) return { ok: true, imported: false };
     storeCache = parsed.data;
     writeStore(storeCache);
     configCache.lastSyncedAt = parsed.savedAt;
     writeConfig(configCache);
+    return { ok: true, imported: true };
   } catch (e) {
     // 외장하드 파일이 깨져있거나 읽기 실패하면, 이 컴퓨터에 있던 데이터를 그대로 안전하게 유지
+    return { ok: false, error: String((e && e.message) || e) };
   }
 }
 importSyncCopyIfNewer();
@@ -206,6 +214,28 @@ function buildTrayMenu() {
         configCache.syncFolder = res.filePaths[0];
         writeConfig(configCache);
         buildTrayMenu();
+      }
+    },
+    // 컴퓨터를 끄지 않고도(퇴근 전 한 번에 안 거치고도) 바로 동기화를
+    // 테스트/실행해볼 수 있게. 성공/실패를 매번 알림으로 바로 보여줌.
+    {
+      label: '지금 외장하드로 내보내기',
+      click: () => {
+        const res = writeSyncCopy();
+        notifyDday(res.ok ? '동기화 완료' : '동기화 실패', res.ok ? '외장하드에 저장했어요.' : res.error);
+      }
+    },
+    {
+      label: '지금 외장하드에서 가져오기',
+      click: () => {
+        const res = importSyncCopyIfNewer();
+        if (!res.ok) { notifyDday('가져오기 실패', res.error); return; }
+        if (res.imported) {
+          notifyDday('가져오기 완료', '외장하드의 최신 데이터를 불러왔어요.');
+          if (mainWindow) mainWindow.reload();
+        } else {
+          notifyDday('가져올 데이터 없음', '이 컴퓨터가 이미 최신 상태예요.');
+        }
       }
     },
     { type: 'separator' },
@@ -377,7 +407,12 @@ function saveAndQuit() {
   } catch (e) {
     // even if the backup write fails, don't block quitting
   }
-  writeSyncCopy();
+  const syncResult = writeSyncCopy();
+  if (!syncResult.ok) {
+    // 조용히 넘어가면 나중에 "분명히 저장했는데 왜 안 됐지"가 되니, 실패하면
+    // 바로 알림으로 원인을 보여줌(15초 종료 전에 볼 수 있음)
+    notifyDday('외장하드 동기화 실패', syncResult.error);
+  }
   // 퇴근 전 한 번에: 저장까지 끝났으니 컴퓨터 자체도 종료. 15초 유예를 둬서
   // 실수로 눌렀을 때 명령 프롬프트에서 shutdown /a 로 취소할 시간을 줌.
   notifyDday('저장 완료', '15초 후 컴퓨터가 종료됩니다.');
